@@ -457,8 +457,7 @@
             <li><strong class="text-yellow-200">K (強制手札オープン)</strong>: 次の人は手札を全員に完全公開。ただしKを出せば回避（さらに次の人へ移送）。公開後に新しく引いたカードは裏向きのまま非公開です。</li>
             <li><strong class="text-yellow-200">Joker (最強ワイルド)</strong>: いつでも場に出せます。ドロー2＋色指定効果を持ちます。</li>
           </ul>
-        </li>
-      </ul>
+        </div>
       </div>
 
       <div class="pt-3 border-t border-gray-700 mt-2 flex justify-end">
@@ -574,8 +573,7 @@
       }
     }
 
-    // --- STREAMING_CHUNK:Defining core game variables and network state ---
-    // --- 2. ゲーム状態 ---
+    // --- 2. 状態管理 ---
     const state = {
       deck: [],
       discardPile: [],
@@ -590,7 +588,7 @@
       activeColor: null, // 'red' or 'black'
       drawStack: 0,
       selectedCardIds: new Set(),
-      drawnThisTurn: false, // このターンすでにカードを引いたかどうかのフラグ
+      drawnThisTurn: false,
       gameEnded: false,
       kRevealedStatus: { A: false, B: false, C: false, D: false }
     };
@@ -600,28 +598,19 @@
       isOnline: false,
       isHost: true,
       mySlotId: 'A', // この端末が操作するスロット ('A', 'B', 'C', 'D')
-      roomCode: null, // 数字のみ (例: "1234")
+      roomCode: null, // 4桁の数字のみ
       peer: null,
       connections: {},
       hostConn: null
     };
 
-    // 数字のみの部屋番号を生成（4桁）
     function generateRoomCode() {
       return String(Math.floor(1000 + Math.random() * 9000));
     }
 
-    // 数字コードをPeerID形式に内部変換（衝突防止用プレフィックス）
     function codeToPeerId(code) {
       const cleanDigits = String(code).replace(/[^0-9]/g, '');
       return `pinaho-room-${cleanDigits}`;
-    }
-
-    // PeerIDから数字のみを抽出
-    function peerIdToCode(peerId) {
-      if (!peerId) return '';
-      const match = peerId.match(/\d+/g);
-      return match ? match.join('') : peerId;
     }
 
     function copyTextToClipboard(text) {
@@ -762,8 +751,7 @@
       return next;
     }
 
-    // --- STREAMING_CHUNK:Implementing seat position rotator for personalized view ---
-    // 座席の相対位置計算 (mySlotIdが常に一番手前の'bottom'になる)
+    // パーソナル視点（自分が常に一番下の'bottom'に来るよう回転）
     function getSeatPositionForPlayer(playerId) {
       const myIdx = PLAYERS.findIndex(p => p.id === netState.mySlotId);
       const targetIdx = PLAYERS.findIndex(p => p.id === playerId);
@@ -777,6 +765,7 @@
       return 'bottom';
     }
 
+    // ホストから全ゲストへステートをブロードキャスト
     function broadcastGameState(actionType = 'sync', payload = {}) {
       if (!netState.isOnline || !netState.isHost) return;
       const message = {
@@ -804,6 +793,7 @@
       }
     }
 
+    // ゲストからホストへアクションを送信
     function sendActionToHost(actionType, data = {}) {
       if (!netState.isOnline || netState.isHost) return;
       if (netState.hostConn && netState.hostConn.open) {
@@ -835,7 +825,6 @@
       return state.deck.pop();
     }
 
-    // --- STREAMING_CHUNK:Initializing gameplay and rolling dice ---
     function initGame() {
       if (netState.isOnline && !netState.isHost) {
         logToast('ホストがゲームを開始するのを待っています…');
@@ -890,6 +879,7 @@
         }
       }
 
+      // サイコロによる親決めを開始
       rollDiceForStartingPlayer();
     }
 
@@ -942,7 +932,6 @@
       }, 1200);
     }
 
-    // --- STREAMING_CHUNK:Processing turns and automated AI routines ---
     function startTurn() {
       if (state.gameEnded) return;
       const cur = getCurrentPlayer();
@@ -1109,7 +1098,6 @@
       }
     }
 
-    // --- STREAMING_CHUNK:Handling card actions and sorting rules ---
     function playCardsAction(player, cards) {
       if (!cards || cards.length === 0) return;
       const hand = state.players[player.id].hand;
@@ -1363,7 +1351,6 @@
       };
     }
 
-    // --- STREAMING_CHUNK:Rendering card UI components ---
     function renderCard(card, isFaceUp = true, isSelected = false, onClick = null) {
       const cardEl = document.createElement('div');
       cardEl.className = `w-14 h-20 sm:w-16 sm:h-24 rounded-lg card-shadow transition-transform flex flex-col justify-between p-1.5 cursor-pointer relative ${
@@ -1405,9 +1392,7 @@
       return cardEl;
     }
 
-    // --- STREAMING_CHUNK:Rendering whole poker table with seat positions ---
     function renderAll() {
-      // 回り順表示
       const dirEl = document.getElementById('turnDirectionBadge');
       if (dirEl) {
         dirEl.innerHTML = state.direction === 1
@@ -1415,7 +1400,6 @@
           : `<i class="fa-solid fa-rotate-left"></i> 反時計回り`;
       }
 
-      // ドロー累積
       const drawBadge = document.getElementById('drawStackBadge');
       if (drawBadge) {
         if (state.drawStack > 0) {
@@ -1431,7 +1415,6 @@
       const deckBadge = document.getElementById('deckCountBadge');
       if (deckBadge) deckBadge.textContent = state.deck.length;
 
-      // 場札の色
       const colorIndicator = document.getElementById('currentColorIndicator');
       const colorDot = document.getElementById('colorDot');
       const colorName = document.getElementById('colorName');
@@ -1453,7 +1436,6 @@
         }
       }
 
-      // 捨て札の場
       const discardArea = document.getElementById('discardArea');
       if (discardArea) {
         discardArea.innerHTML = '';
@@ -1468,7 +1450,6 @@
       const current = getCurrentPlayer();
       const mySlot = netState.mySlotId;
 
-      // 各座席の描画（bottom, left, top, right）
       for (const p of PLAYERS) {
         const pos = getSeatPositionForPlayer(p.id);
         const seatEl = document.getElementById(`seat-${pos}`);
@@ -1522,13 +1503,11 @@
         }
       }
 
-      // 自分の合計点数
       const myHand = state.players[mySlot].hand;
       const mySums = calculateHandSums(myHand);
       const sumEl = document.getElementById('playerTotalSum');
       if (sumEl) sumEl.textContent = mySums[0];
 
-      // ボタンの出し分け制御
       const btnPlay = document.getElementById('btnPlaySelected');
       const btnPass = document.getElementById('btnPass');
       const btnRon = document.getElementById('btnRon');
@@ -1536,7 +1515,6 @@
       const selCount = state.selectedCardIds.size;
 
       if (current.id === mySlot && !state.gameEnded) {
-        // カードを選択しているときは「出す」ボタンを表示
         if (selCount > 0) {
           btnPlay.classList.remove('hidden');
           document.getElementById('selectedCardCount').textContent = selCount;
@@ -1544,7 +1522,6 @@
           btnPlay.classList.add('hidden');
         }
 
-        // 1枚引いた後は「パスして終了」ボタンを表示
         if (state.drawnThisTurn) {
           btnPass.classList.remove('hidden');
         } else {
@@ -1580,7 +1557,6 @@
       }
     }
 
-    // --- STREAMING_CHUNK:Attaching user interactions and action handlers ---
     function toggleCardSelect(card) {
       const top = getTopDiscard();
       const myHand = state.players[netState.mySlotId].hand;
@@ -1624,12 +1600,10 @@
       renderAll();
     }
 
-    // 山札クリック
     document.getElementById('drawDeckArea').addEventListener('click', () => {
       const cur = getCurrentPlayer();
       if (cur.id !== netState.mySlotId || state.gameEnded) return;
 
-      // 1ターンに2回以上引かないようガード
       if (state.drawnThisTurn) {
         logToast('このターンはすでに山札から1枚引いています。「出す」か「パスして終了」を選択してください。');
         playSound('warn');
@@ -1689,7 +1663,6 @@
       broadcastGameState('sync');
     });
 
-    // 「出す」ボタン
     document.getElementById('btnPlaySelected').addEventListener('click', () => {
       if (state.selectedCardIds.size === 0) return;
       const myHand = state.players[netState.mySlotId].hand;
@@ -1709,7 +1682,6 @@
       playCardsAction(getCurrentPlayer(), cardsToPlay);
     });
 
-    // 「パスして終了」ボタン
     document.getElementById('btnPass').addEventListener('click', () => {
       logToast('パスして手番を終了しました');
       state.drawnThisTurn = false;
@@ -1721,7 +1693,6 @@
       nextTurn();
     });
 
-    // 「ツモ上がり」ボタン
     document.getElementById('btnTsumo').addEventListener('click', () => {
       const mySlot = netState.mySlotId;
       const myHand = state.players[mySlot].hand;
@@ -1750,7 +1721,6 @@
       );
     });
 
-    // 「ロン」ボタン
     document.getElementById('btnRon').addEventListener('click', () => {
       const mySlot = netState.mySlotId;
       if (netState.isOnline && !netState.isHost) {
@@ -1763,7 +1733,6 @@
       resolveRonWin([PLAYERS.find(p => p.id === mySlot)], discarder, mySlot);
     });
 
-    // ゲーム終了モーダル
     function endGame(winner, winType, details, winningCard = null, winningCardDesc = '') {
       state.gameEnded = true;
       playSound(winner && winner.id === netState.mySlotId ? 'win' : 'warn');
@@ -1862,7 +1831,7 @@
       modal.classList.remove('hidden');
     }
 
-    // --- STREAMING_CHUNK:Establishing online multiplayer handling ---
+    // --- 4. オンライン通信処理 ---
     function setupPeerHost(roomDigits, myName) {
       if (netState.peer) {
         try { netState.peer.destroy(); } catch (e) {}
@@ -1879,6 +1848,9 @@
 
       PLAYERS[0].name = `${myName} (ホスト)`;
       PLAYERS[0].isAI = false;
+
+      const displayCode = document.getElementById('displayRoomCode');
+      if (displayCode) displayCode.textContent = cleanCode;
 
       const peerOptions = {
         debug: 0,
@@ -1898,11 +1870,9 @@
       }
 
       netState.peer.on('open', (id) => {
-        const numericCode = peerIdToCode(id) || cleanCode;
-        netState.roomCode = numericCode;
-        const displayCode = document.getElementById('displayRoomCode');
-        if (displayCode) displayCode.textContent = numericCode;
-        logToast(`部屋番号【${numericCode}】を作成しました！`);
+        netState.roomCode = cleanCode;
+        if (displayCode) displayCode.textContent = cleanCode;
+        logToast(`部屋番号【${cleanCode}】を作成しました！`);
         updateLobbyUI();
         updateNetworkStatusUI();
       });
@@ -1924,7 +1894,6 @@
       });
 
       netState.peer.on('error', (err) => {
-        // IDが既に使用されている場合は別の数字で再試行
         if (err && err.type === 'unavailable-id') {
           const newCode = generateRoomCode();
           logToast(`部屋番号が重複したため新番号【${newCode}】で再作成中…`);
@@ -2230,16 +2199,12 @@
       logToast('オフラインモードに切り替えました');
     }
 
-    // --- STREAMING_CHUNK:Safeguarding network instantiation against iframe Canvas restrictions ---
     function isWebSocketAllowed() {
-      // Check if we are inside a restricted sandbox iframe
       try {
         if (window.self !== window.top && window.location.origin === 'null') {
           return false;
         }
-      } catch (e) {
-        // Cross-origin iframe restrictions
-      }
+      } catch (e) {}
       return true;
     }
 
@@ -2261,7 +2226,7 @@
       }
     }
 
-    // --- STREAMING_CHUNK:Binding UI controls and initial startup sequence ---
+    // --- 5. UIイベントリスナー登録 ---
     document.getElementById('btnMultiplayerMenu').addEventListener('click', () => {
       document.getElementById('modalMultiplayer').classList.remove('hidden');
       updateLobbyUI();
