@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>オリジナルトランプ対戦カードゲーム (オンライン対応)</title>
+  <title>オリジナルトランプ対戦カードゲーム</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -71,7 +71,7 @@
 <body class="bg-gray-950 text-white min-h-screen flex flex-col justify-between overflow-hidden">
 
   <!-- ヘッダー -->
-  <header class="w-full bg-black/50 backdrop-blur-md border-b border-emerald-900/60 px-3 sm:px-4 py-2 flex items-center justify-between z-20">
+  <header class="w-full bg-black/60 backdrop-blur-md border-b border-emerald-900/60 px-3 sm:px-4 py-2 flex items-center justify-between z-20">
     <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
       <div class="bg-amber-500 text-black font-black px-2 sm:px-2.5 py-1 rounded-md text-[11px] sm:text-xs shadow tracking-wider flex items-center gap-1">
         <i class="fa-solid fa-cards"></i> <span>TRUMP BATTLE</span>
@@ -115,7 +115,7 @@
   <!-- ゲームメインテーブル -->
   <main class="relative flex-1 table-felt w-full flex flex-col justify-between items-center p-2 sm:p-3 select-none overflow-hidden">
     
-    <!-- TOP: Player (上席) -->
+    <!-- TOP 席 (対面) -->
     <div class="flex flex-col items-center z-10">
       <div id="seat-top" class="flex items-center gap-2 px-3 py-1 rounded-full bg-black/60 border border-emerald-700/50 text-xs transition duration-300">
         <div id="avatar-top" class="w-6 h-6 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-[11px] text-white">C</div>
@@ -127,10 +127,10 @@
       <div id="hand-top" class="flex justify-center -space-x-4 mt-1 transition-all min-h-[50px]"></div>
     </div>
 
-    <!-- MIDDLE ROW: 左席, 中央テーブル, 右席 -->
+    <!-- MIDDLE ROW: LEFT席, 中央テーブル, RIGHT席 -->
     <div class="w-full flex items-center justify-between px-2 sm:px-8 my-auto relative">
       
-      <!-- LEFT (左席) -->
+      <!-- LEFT 席 -->
       <div class="flex flex-col items-center z-10 w-24 sm:w-36">
         <div id="seat-left" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-emerald-700/50 text-xs transition duration-300">
           <div id="avatar-left" class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center font-bold text-[11px] text-white">B</div>
@@ -148,8 +148,9 @@
 
       <!-- CENTER FIELD: 山札 & 捨て札場 & 現色インジケーター -->
       <div class="flex flex-col items-center justify-center relative">
+        <!-- 色指定インジケーター -->
         <div id="currentColorIndicator" class="mb-2 px-3 py-0.5 rounded-full text-xs font-black flex items-center gap-1.5 shadow-md border transition-all duration-300 bg-neutral-900 border-neutral-700 text-white">
-          <span class="w-3 h-3 rounded-full inline-block bg-white" id="colorDot"></span>
+          <span class="w-2.5 h-2.5 rounded-full inline-block bg-white" id="colorDot"></span>
           <span id="colorName">指定なし</span>
         </div>
 
@@ -182,7 +183,7 @@
         </div>
       </div>
 
-      <!-- RIGHT (右席) -->
+      <!-- RIGHT 席 -->
       <div class="flex flex-col items-center z-10 w-24 sm:w-36">
         <div id="seat-right" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-emerald-700/50 text-xs transition duration-300">
           <div id="avatar-right" class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center font-bold text-[11px] text-white">D</div>
@@ -200,9 +201,9 @@
 
     </div>
 
-    <!-- BOTTOM: ローカルプレイヤー (常にあなた自身が手前に表示されます) -->
+    <!-- BOTTOM 席: (ローカルプレイヤー・自分自身) -->
     <div class="w-full flex flex-col items-center z-10 max-w-4xl px-2">
-      <div class="w-full flex items-center justify-between mb-1.5 px-2">
+      <div class="w-full flex items-center justify-between mb-1.5 px-2 flex-wrap gap-2">
         <div class="flex items-center gap-2 flex-wrap">
           <div id="seat-bottom" class="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/70 border border-amber-500/70 text-xs">
             <div id="avatar-bottom" class="w-6 h-6 rounded-full bg-amber-500 text-black flex items-center justify-center font-black text-xs">A</div>
@@ -221,25 +222,29 @@
 
         <!-- アクションボタン群 -->
         <div class="flex items-center gap-2">
+          <!-- ロンボタン -->
           <button id="btnRon" class="hidden bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-black text-xs sm:text-sm px-3.5 py-1.5 rounded-lg border-2 border-yellow-300 shadow-lg shadow-rose-900/50 animate-bounce transition flex items-center gap-1">
             <i class="fa-solid fa-fire text-yellow-300"></i> ロン上がり宣言！
           </button>
 
+          <!-- ツモボタン -->
           <button id="btnTsumo" class="hidden bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-black text-xs sm:text-sm px-3.5 py-1.5 rounded-lg border-2 border-white shadow-lg shadow-amber-900/50 animate-bounce transition flex items-center gap-1">
             <i class="fa-solid fa-crown text-black"></i> ツモ上がり！
           </button>
 
-          <button id="btnPass" class="hidden bg-gray-700 hover:bg-gray-600 text-xs px-3 py-1.5 rounded-lg border border-gray-500 transition font-bold">
-            パスして終了
+          <!-- パスボタン（1枚引いたあとに出せる/出さない場合に表示） -->
+          <button id="btnPass" class="hidden bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black text-xs sm:text-sm px-3.5 py-1.5 rounded-lg border border-amber-300 shadow-lg transition flex items-center gap-1 animate-pulse">
+            <i class="fa-solid fa-forward-step"></i> パスして終了
           </button>
 
+          <!-- 出すボタン -->
           <button id="btnPlaySelected" class="hidden bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-xs sm:text-sm font-black px-4 py-1.5 rounded-lg border border-emerald-300 shadow-md transition flex items-center gap-1">
             <i class="fa-solid fa-play"></i> 出す (<span id="selectedCardCount">0</span>枚)
           </button>
         </div>
       </div>
 
-      <!-- 手札リスト -->
+      <!-- 手札リスト (BOTTOM席) -->
       <div id="hand-bottom" class="w-full flex justify-center items-end -space-x-5 sm:-space-x-8 pb-1 pt-3 overflow-x-auto no-scrollbar min-h-[130px]"></div>
     </div>
   </main>
@@ -258,14 +263,12 @@
       </div>
 
       <div class="mt-4 space-y-4">
-        <!-- プレイヤー名設定 -->
         <div>
           <label class="block text-xs font-bold text-gray-300 mb-1">あなたのプレイヤー名</label>
           <input id="inputPlayerName" type="text" maxlength="10" placeholder="プレイヤー名を入力" value="あなた"
             class="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white font-bold focus:border-indigo-500 focus:outline-none" />
         </div>
 
-        <!-- ルーム作成・参加セクション -->
         <div id="multiplayerActionSection" class="space-y-4">
           <div class="bg-indigo-950/40 border border-indigo-800/60 rounded-2xl p-4">
             <h4 class="text-sm font-black text-indigo-300 mb-1 flex items-center gap-1.5">
@@ -290,7 +293,7 @@
               <i class="fa-solid fa-right-to-bracket"></i> 部屋番号で参加する
             </h4>
             <div class="flex gap-2 mt-2">
-              <input id="inputRoomCode" type="text" placeholder="部屋コード (例: 4892)"
+              <input id="inputRoomCode" type="text" placeholder="部屋コード (例: TRUMP-1234)"
                 class="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white uppercase font-bold focus:border-amber-400 focus:outline-none" />
               <button id="btnJoinRoom" class="bg-amber-500 hover:bg-amber-400 text-black font-black px-4 py-2 rounded-xl text-xs shadow transition">
                 参加
@@ -299,7 +302,6 @@
           </div>
         </div>
 
-        <!-- ルーム待機中表示（接続確立後） -->
         <div id="multiplayerLobbySection" class="hidden space-y-4">
           <div class="bg-indigo-950/60 border-2 border-indigo-500/80 rounded-2xl p-4 text-center">
             <span class="text-[11px] text-indigo-300 font-bold uppercase tracking-wider">部屋コード</span>
@@ -308,10 +310,9 @@
             <button id="btnCopyInviteLink" class="mt-2 bg-indigo-800/90 hover:bg-indigo-700 text-indigo-100 text-xs font-bold px-3 py-1.5 rounded-lg border border-indigo-400 flex items-center justify-center gap-1.5 mx-auto transition">
               <i class="fa-solid fa-copy"></i> 招待用リンクをコピー
             </button>
-            <div id="copySuccessMsg" class="hidden text-[11px] text-emerald-400 font-bold mt-1">コピーしました！LINEやDiscordで送信してください</div>
+            <div id="copySuccessMsg" class="hidden text-[11px] text-emerald-400 font-bold mt-1">コピーしました！友達に送信してください</div>
           </div>
 
-          <!-- 参加者リスト -->
           <div>
             <h4 class="text-xs font-black text-gray-300 mb-2 flex items-center justify-between">
               <span>卓のプレイヤー枠 (4名)</span>
@@ -442,6 +443,7 @@
           <p>4人対戦、初期手札は4枚。時計回り（初期）で進みます。場の一番上のカードと「同じマーク」または「同じ数字」のカードを出せます。同じ数字なら複数枚同時に出してもOKです。</p>
           <p class="text-amber-200 mt-1">※<strong>同じ数字を複数枚出す場合</strong>：場のマークと同じカードが下になり、違うマークのカードが一番上に重なります。次の人はその<strong>一番上のマーク</strong>を引き継いでプレイを続けます。</p>
           <p class="text-amber-200 mt-1">※手札が残り1枚のときは、自分の手番開始時に<strong>必ず山札から1枚引きます</strong>。引いたカードが持っている1枚と同じ数字なら<strong>ツモ上がり</strong>！ツモれなくても、場に出せるカードがあれば出してOKです。</p>
+          <p class="text-amber-200 mt-1">※<strong>山札を引いた後のパス</strong>：山札からカードを引いた後、出せるカードがない場合や温存したい場合は「パスして終了」で手番を次に回せます。（1ターンに引ける山札は1枚まで）</p>
           <p class="text-emerald-300 mt-1">※<strong>数字の計算</strong>：<strong>全カード数字そのまま</strong>（A=1, 2〜10, J=11, Q=12, K=13）。場にK(13)が出た時、手札が10と3（合計13）ならロン上がりできます！</p>
         </div>
 
@@ -455,7 +457,8 @@
             <li><strong class="text-yellow-200">K (強制手札オープン)</strong>: 次の人は手札を全員に完全公開。ただしKを出せば回避（さらに次の人へ移送）。公開後に新しく引いたカードは裏向きのまま非公開です。</li>
             <li><strong class="text-yellow-200">Joker (最強ワイルド)</strong>: いつでも場に出せます。ドロー2＋色指定効果を持ちます。</li>
           </ul>
-        </div>
+        </li>
+      </ul>
       </div>
 
       <div class="pt-3 border-t border-gray-700 mt-2 flex justify-end">
@@ -524,6 +527,7 @@
       { id: 'D', name: 'Dさん', isAI: true, colorBg: 'bg-purple-600', peerId: null }
     ];
 
+    // サウンドエフェクト管理 (Tone.js)
     let soundEnabled = true;
     let synth = null;
 
@@ -543,17 +547,34 @@
         }
         const now = Tone.now();
         switch(type) {
-          case 'card': synth.triggerAttackRelease(["C5"], "32n", now); break;
-          case 'draw': synth.triggerAttackRelease(["G4", "C5"], "16n", now); break;
-          case 'special': synth.triggerAttackRelease(["E5", "B5"], "16n", now); break;
-          case 'dice': synth.triggerAttackRelease(["G4", "B4", "D5"], "32n", now); break;
-          case 'ron': synth.triggerAttackRelease(["C4", "G4", "C5", "E5", "G5"], "4n", now); break;
-          case 'win': synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n", now); break;
-          case 'warn': synth.triggerAttackRelease(["F3", "Db3"], "8n", now); break;
+          case 'card':
+            synth.triggerAttackRelease(["C5"], "32n", now);
+            break;
+          case 'draw':
+            synth.triggerAttackRelease(["G4", "C5"], "16n", now);
+            break;
+          case 'special':
+            synth.triggerAttackRelease(["E5", "B5"], "16n", now);
+            break;
+          case 'dice':
+            synth.triggerAttackRelease(["G4", "B4", "D5"], "32n", now);
+            break;
+          case 'ron':
+            synth.triggerAttackRelease(["C4", "G4", "C5", "E5", "G5"], "4n", now);
+            break;
+          case 'win':
+            synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n", now);
+            break;
+          case 'warn':
+            synth.triggerAttackRelease(["F3", "Db3"], "8n", now);
+            break;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Audio play error', e);
+      }
     }
 
+    // --- STREAMING_CHUNK:Defining core game variables and network state ---
     // --- 2. ゲーム状態 ---
     const state = {
       deck: [],
@@ -569,7 +590,7 @@
       activeColor: null, // 'red' or 'black'
       drawStack: 0,
       selectedCardIds: new Set(),
-      drawnThisTurn: null,
+      drawnThisTurn: false, // このターンすでにカードを引いたかどうかのフラグ
       gameEnded: false,
       kRevealedStatus: { A: false, B: false, C: false, D: false }
     };
@@ -578,12 +599,16 @@
     const netState = {
       isOnline: false,
       isHost: true,
-      mySlotId: 'A', // この端末が担当するスロット ('A', 'B', 'C', 'D')
+      mySlotId: 'A', // この端末が操作するスロット ('A', 'B', 'C', 'D')
       roomCode: null,
       peer: null,
-      connections: {}, // host用: { [peerId]: dataConnection }
+      connections: {},
       hostConn: null
     };
+
+    function generateRoomCode() {
+      return 'TRUMP-' + Math.floor(1000 + Math.random() * 9000);
+    }
 
     function copyTextToClipboard(text) {
       const tempInput = document.createElement("textarea");
@@ -593,11 +618,12 @@
       try {
         document.execCommand('copy');
       } catch (e) {
-        console.error('Copy error', e);
+        console.error('Copy failed', e);
       }
       document.body.removeChild(tempInput);
     }
 
+    // --- 3. デッキ生成 ---
     function createDeck() {
       const cards = [];
       let uid = 1;
@@ -614,8 +640,24 @@
           });
         }
       }
-      cards.push({ id: `c_${uid++}`, suit: 'joker', symbol: '★', color: 'red', rank: 0, isJoker: true, pointValue: 0 });
-      cards.push({ id: `c_${uid++}`, suit: 'joker', symbol: '★', color: 'black', rank: 0, isJoker: true, pointValue: 0 });
+      cards.push({
+        id: `c_${uid++}`,
+        suit: 'joker',
+        symbol: '★',
+        color: 'red',
+        rank: 0,
+        isJoker: true,
+        pointValue: 0
+      });
+      cards.push({
+        id: `c_${uid++}`,
+        suit: 'joker',
+        symbol: '★',
+        color: 'black',
+        rank: 0,
+        isJoker: true,
+        pointValue: 0
+      });
 
       for (let i = cards.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -666,7 +708,9 @@
       if (!hand || hand.length === 0) return [0];
       let sum = 0;
       for (const card of hand) {
-        if (!card.isJoker) sum += card.rank;
+        if (!card.isJoker) {
+          sum += card.rank;
+        }
       }
       return [sum];
     }
@@ -704,7 +748,21 @@
       return next;
     }
 
-    // --- STREAMING_CHUNK:Networking synchronization and PeerJS fixes ---
+    // --- STREAMING_CHUNK:Implementing seat position rotator for personalized view ---
+    // 座席の相対位置計算 (mySlotIdが常に一番手前の'bottom'になる)
+    function getSeatPositionForPlayer(playerId) {
+      const myIdx = PLAYERS.findIndex(p => p.id === netState.mySlotId);
+      const targetIdx = PLAYERS.findIndex(p => p.id === playerId);
+      const diff = (targetIdx - myIdx + 4) % 4;
+      switch (diff) {
+        case 0: return 'bottom';
+        case 1: return 'left';
+        case 2: return 'top';
+        case 3: return 'right';
+      }
+      return 'bottom';
+    }
+
     function broadcastGameState(actionType = 'sync', payload = {}) {
       if (!netState.isOnline || !netState.isHost) return;
       const message = {
@@ -719,7 +777,8 @@
           activeColor: state.activeColor,
           drawStack: state.drawStack,
           gameEnded: state.gameEnded,
-          kRevealedStatus: state.kRevealedStatus
+          kRevealedStatus: state.kRevealedStatus,
+          drawnThisTurn: state.drawnThisTurn
         },
         payload: payload
       };
@@ -762,6 +821,7 @@
       return state.deck.pop();
     }
 
+    // --- STREAMING_CHUNK:Initializing gameplay and rolling dice ---
     function initGame() {
       if (netState.isOnline && !netState.isHost) {
         logToast('ホストがゲームを開始するのを待っています…');
@@ -775,7 +835,7 @@
       state.activeColor = null;
       state.drawStack = 0;
       state.selectedCardIds.clear();
-      state.drawnThisTurn = null;
+      state.drawnThisTurn = false;
       state.gameEnded = false;
       state.kRevealedStatus = { A: false, B: false, C: false, D: false };
 
@@ -868,11 +928,12 @@
       }, 1200);
     }
 
+    // --- STREAMING_CHUNK:Processing turns and automated AI routines ---
     function startTurn() {
       if (state.gameEnded) return;
       const cur = getCurrentPlayer();
       state.selectedCardIds.clear();
-      state.drawnThisTurn = null;
+      state.drawnThisTurn = false;
 
       if (state.drawStack > 0) {
         const canDefend = state.players[cur.id].hand.some(c => c.rank === 2 || c.isJoker);
@@ -908,6 +969,8 @@
 
     function nextTurn(skipSteps = 1) {
       if (state.gameEnded) return;
+      state.drawnThisTurn = false;
+      state.selectedCardIds.clear();
       state.turnIndex = getNextPlayerIndex(skipSteps);
       renderAll();
       broadcastGameState('sync');
@@ -931,7 +994,7 @@
 
           card.isHiddenFromReveal = state.kRevealedStatus[cur.id];
           hand.push(card);
-          state.drawnThisTurn = card.id;
+          state.drawnThisTurn = true;
           playSound('draw');
           renderAll();
           broadcastGameState('sync');
@@ -1002,7 +1065,7 @@
 
         card.isHiddenFromReveal = state.kRevealedStatus[cur.id];
         hand.push(card);
-        state.drawnThisTurn = card.id;
+        state.drawnThisTurn = true;
         playSound('draw');
         logToast(`${cur.name}は山札から1枚引きました`);
         renderAll();
@@ -1032,6 +1095,7 @@
       }
     }
 
+    // --- STREAMING_CHUNK:Handling card actions and sorting rules ---
     function playCardsAction(player, cards) {
       if (!cards || cards.length === 0) return;
       const hand = state.players[player.id].hand;
@@ -1285,22 +1349,7 @@
       };
     }
 
-    // --- STREAMING_CHUNK:Rendering personal perspective views and table rotation ---
-    function getSeatPositionForPlayer(playerId) {
-      const mySlot = netState.mySlotId;
-      const order = ['A', 'B', 'C', 'D'];
-      const myIdx = order.indexOf(mySlot);
-      const targetIdx = order.indexOf(playerId);
-      const relIdx = (targetIdx - myIdx + 4) % 4;
-
-      switch(relIdx) {
-        case 0: return 'bottom';
-        case 1: return 'right';
-        case 2: return 'top';
-        case 3: return 'left';
-      }
-    }
-
+    // --- STREAMING_CHUNK:Rendering card UI components ---
     function renderCard(card, isFaceUp = true, isSelected = false, onClick = null) {
       const cardEl = document.createElement('div');
       cardEl.className = `w-14 h-20 sm:w-16 sm:h-24 rounded-lg card-shadow transition-transform flex flex-col justify-between p-1.5 cursor-pointer relative ${
@@ -1342,54 +1391,70 @@
       return cardEl;
     }
 
+    // --- STREAMING_CHUNK:Rendering whole poker table with seat positions ---
     function renderAll() {
-      document.getElementById('turnDirectionBadge').innerHTML = state.direction === 1
-        ? `<i class="fa-solid fa-rotate-right"></i> 時計回り`
-        : `<i class="fa-solid fa-rotate-left"></i> 反時計回り`;
-
-      const drawBadge = document.getElementById('drawStackBadge');
-      if (state.drawStack > 0) {
-        drawBadge.classList.remove('hidden');
-        drawBadge.classList.add('flex');
-        document.getElementById('drawStackCount').textContent = state.drawStack;
-      } else {
-        drawBadge.classList.add('hidden');
-        drawBadge.classList.remove('flex');
+      // 回り順表示
+      const dirEl = document.getElementById('turnDirectionBadge');
+      if (dirEl) {
+        dirEl.innerHTML = state.direction === 1
+          ? `<i class="fa-solid fa-rotate-right"></i> 時計回り`
+          : `<i class="fa-solid fa-rotate-left"></i> 反時計回り`;
       }
 
-      document.getElementById('deckCountBadge').textContent = state.deck.length;
+      // ドロー累積
+      const drawBadge = document.getElementById('drawStackBadge');
+      if (drawBadge) {
+        if (state.drawStack > 0) {
+          drawBadge.classList.remove('hidden');
+          drawBadge.classList.add('flex');
+          document.getElementById('drawStackCount').textContent = state.drawStack;
+        } else {
+          drawBadge.classList.add('hidden');
+          drawBadge.classList.remove('flex');
+        }
+      }
 
+      const deckBadge = document.getElementById('deckCountBadge');
+      if (deckBadge) deckBadge.textContent = state.deck.length;
+
+      // 場札の色
       const colorIndicator = document.getElementById('currentColorIndicator');
       const colorDot = document.getElementById('colorDot');
       const colorName = document.getElementById('colorName');
       const effColor = getEffectiveColor();
 
-      if (state.activeColor === 'red') {
-        colorIndicator.className = 'mb-2 px-3 py-0.5 rounded-full text-xs font-black flex items-center gap-1.5 shadow-md border bg-rose-950/80 border-rose-500 text-rose-300';
-        colorDot.className = 'w-2.5 h-2.5 rounded-full inline-block bg-rose-500 animate-pulse';
-        colorName.textContent = '赤 指定中 (♥・♦)';
-      } else if (state.activeColor === 'black') {
-        colorIndicator.className = 'mb-2 px-3 py-0.5 rounded-full text-xs font-black flex items-center gap-1.5 shadow-md border bg-slate-900 border-slate-400 text-slate-200';
-        colorDot.className = 'w-2.5 h-2.5 rounded-full inline-block bg-white';
-        colorName.textContent = '黒 指定中 (♠・♣)';
-      } else {
-        colorIndicator.className = 'mb-2 px-3 py-0.5 rounded-full text-xs font-black flex items-center gap-1.5 shadow-md border bg-neutral-900/60 border-neutral-700 text-neutral-300';
-        colorDot.className = `w-2.5 h-2.5 rounded-full inline-block ${effColor === 'red' ? 'bg-red-500' : 'bg-gray-200'}`;
-        colorName.textContent = effColor === 'red' ? '場札: 赤系' : '場札: 黒系';
+      if (colorIndicator && colorDot && colorName) {
+        if (state.activeColor === 'red') {
+          colorIndicator.className = 'mb-2 px-3 py-0.5 rounded-full text-xs font-black flex items-center gap-1.5 shadow-md border bg-rose-950/80 border-rose-500 text-rose-300';
+          colorDot.className = 'w-2.5 h-2.5 rounded-full inline-block bg-rose-500 animate-pulse';
+          colorName.textContent = '赤 指定中 (♥・♦)';
+        } else if (state.activeColor === 'black') {
+          colorIndicator.className = 'mb-2 px-3 py-0.5 rounded-full text-xs font-black flex items-center gap-1.5 shadow-md border bg-slate-900 border-slate-400 text-slate-200';
+          colorDot.className = 'w-2.5 h-2.5 rounded-full inline-block bg-white';
+          colorName.textContent = '黒 指定中 (♠・♣)';
+        } else {
+          colorIndicator.className = 'mb-2 px-3 py-0.5 rounded-full text-xs font-black flex items-center gap-1.5 shadow-md border bg-neutral-900/60 border-neutral-700 text-neutral-300';
+          colorDot.className = `w-2.5 h-2.5 rounded-full inline-block ${effColor === 'red' ? 'bg-red-500' : 'bg-gray-200'}`;
+          colorName.textContent = effColor === 'red' ? '場札: 赤系' : '場札: 黒系';
+        }
       }
 
+      // 捨て札の場
       const discardArea = document.getElementById('discardArea');
-      discardArea.innerHTML = '';
-      const topDiscard = getTopDiscard();
-      if (topDiscard) {
-        const topEl = renderCard(topDiscard, true, false);
-        topEl.classList.remove('card-hover');
-        discardArea.appendChild(topEl);
+      if (discardArea) {
+        discardArea.innerHTML = '';
+        const topDiscard = getTopDiscard();
+        if (topDiscard) {
+          const topEl = renderCard(topDiscard, true, false);
+          topEl.classList.remove('card-hover');
+          discardArea.appendChild(topEl);
+        }
       }
 
       const current = getCurrentPlayer();
       const mySlot = netState.mySlotId;
 
+      // 各座席の描画（bottom, left, top, right）
       for (const p of PLAYERS) {
         const pos = getSeatPositionForPlayer(p.id);
         const seatEl = document.getElementById(`seat-${pos}`);
@@ -1443,10 +1508,13 @@
         }
       }
 
+      // 自分の合計点数
       const myHand = state.players[mySlot].hand;
       const mySums = calculateHandSums(myHand);
-      document.getElementById('playerTotalSum').textContent = mySums[0];
+      const sumEl = document.getElementById('playerTotalSum');
+      if (sumEl) sumEl.textContent = mySums[0];
 
+      // ボタンの出し分け制御
       const btnPlay = document.getElementById('btnPlaySelected');
       const btnPass = document.getElementById('btnPass');
       const btnRon = document.getElementById('btnRon');
@@ -1454,6 +1522,7 @@
       const selCount = state.selectedCardIds.size;
 
       if (current.id === mySlot && !state.gameEnded) {
+        // カードを選択しているときは「出す」ボタンを表示
         if (selCount > 0) {
           btnPlay.classList.remove('hidden');
           document.getElementById('selectedCardCount').textContent = selCount;
@@ -1461,6 +1530,7 @@
           btnPlay.classList.add('hidden');
         }
 
+        // 1枚引いた後は「パスして終了」ボタンを表示
         if (state.drawnThisTurn) {
           btnPass.classList.remove('hidden');
         } else {
@@ -1471,6 +1541,7 @@
         btnPass.classList.add('hidden');
       }
 
+      const topDiscard = getTopDiscard();
       const lastPlayerIndex = (state.turnIndex - state.direction + 4) % 4;
       const lastPlayer = PLAYERS[lastPlayerIndex];
       const isOthersDiscard = (lastPlayer && lastPlayer.id !== mySlot);
@@ -1495,6 +1566,7 @@
       }
     }
 
+    // --- STREAMING_CHUNK:Attaching user interactions and action handlers ---
     function toggleCardSelect(card) {
       const top = getTopDiscard();
       const myHand = state.players[netState.mySlotId].hand;
@@ -1538,13 +1610,15 @@
       renderAll();
     }
 
-    // --- STREAMING_CHUNK:Hooking buttons, modals, and PeerJS connection lifecycle ---
+    // 山札クリック
     document.getElementById('drawDeckArea').addEventListener('click', () => {
       const cur = getCurrentPlayer();
       if (cur.id !== netState.mySlotId || state.gameEnded) return;
 
+      // 1ターンに2回以上引かないようガード
       if (state.drawnThisTurn) {
-        logToast('このターンはすでにカードを引いています');
+        logToast('このターンはすでに山札から1枚引いています。「出す」か「パスして終了」を選択してください。');
+        playSound('warn');
         return;
       }
 
@@ -1569,6 +1643,7 @@
           }
         }
         state.drawStack = 0;
+        state.drawnThisTurn = true;
         renderAll();
         broadcastGameState('sync');
         nextTurn();
@@ -1581,7 +1656,7 @@
       const wasSingle = (state.players[cur.id].hand.length === 1);
       card.isHiddenFromReveal = state.kRevealedStatus[cur.id];
       state.players[cur.id].hand.push(card);
-      state.drawnThisTurn = card.id;
+      state.drawnThisTurn = true;
       playSound('draw');
 
       if (wasSingle) {
@@ -1590,16 +1665,17 @@
           logToast(`【ツモ！！】手札と同じ [${card.symbol} ${getRankName(card.rank)}] を引きました！ツモ上がりボタンを押してください！`);
           playSound('special');
         } else {
-          logToast(`山札から [${card.isJoker ? '★ Joker' : card.symbol + ' ' + getRankName(card.rank)}] を引きました。出せるカードがあれば出せます。`);
+          logToast(`山札から [${card.isJoker ? '★ Joker' : card.symbol + ' ' + getRankName(card.rank)}] を引きました。出せるカードがなければ「パス」を押してください。`);
         }
       } else {
-        logToast(`山札から [${card.isJoker ? '★ Joker' : card.symbol + ' ' + getRankName(card.rank)}] を引きました`);
+        logToast(`山札から [${card.isJoker ? '★ Joker' : card.symbol + ' ' + getRankName(card.rank)}] を引きました。出せるカードがなければ「パス」を押してください。`);
       }
 
       renderAll();
       broadcastGameState('sync');
     });
 
+    // 「出す」ボタン
     document.getElementById('btnPlaySelected').addEventListener('click', () => {
       if (state.selectedCardIds.size === 0) return;
       const myHand = state.players[netState.mySlotId].hand;
@@ -1619,9 +1695,11 @@
       playCardsAction(getCurrentPlayer(), cardsToPlay);
     });
 
+    // 「パスして終了」ボタン
     document.getElementById('btnPass').addEventListener('click', () => {
       logToast('パスして手番を終了しました');
-      state.drawnThisTurn = null;
+      state.drawnThisTurn = false;
+      state.selectedCardIds.clear();
       if (netState.isOnline && !netState.isHost) {
         sendActionToHost('pass');
         return;
@@ -1629,11 +1707,11 @@
       nextTurn();
     });
 
+    // 「ツモ上がり」ボタン
     document.getElementById('btnTsumo').addEventListener('click', () => {
       const mySlot = netState.mySlotId;
-      const drawnCardId = state.drawnThisTurn;
       const myHand = state.players[mySlot].hand;
-      const drawnCard = myHand.find(c => c.id === drawnCardId) || myHand[1];
+      const drawnCard = myHand[myHand.length - 1];
 
       if (netState.isOnline && !netState.isHost) {
         sendActionToHost('tsumo_declare');
@@ -1658,6 +1736,7 @@
       );
     });
 
+    // 「ロン」ボタン
     document.getElementById('btnRon').addEventListener('click', () => {
       const mySlot = netState.mySlotId;
       if (netState.isOnline && !netState.isHost) {
@@ -1670,6 +1749,7 @@
       resolveRonWin([PLAYERS.find(p => p.id === mySlot)], discarder, mySlot);
     });
 
+    // ゲーム終了モーダル
     function endGame(winner, winType, details, winningCard = null, winningCardDesc = '') {
       state.gameEnded = true;
       playSound(winner && winner.id === netState.mySlotId ? 'win' : 'warn');
@@ -1768,27 +1848,43 @@
       modal.classList.remove('hidden');
     }
 
-    // --- STREAMING_CHUNK:Peer connection lifecycle and reliable message handlers ---
+    // --- STREAMING_CHUNK:Establishing online multiplayer handling ---
     function setupPeerHost(roomCode, myName) {
       if (netState.peer) {
-        netState.peer.destroy();
+        try { netState.peer.destroy(); } catch (e) {}
       }
 
       netState.isOnline = true;
       netState.isHost = true;
       netState.mySlotId = 'A';
-      netState.roomCode = roomCode;
       netState.connections = {};
 
       PLAYERS[0].name = `${myName} (ホスト)`;
       PLAYERS[0].isAI = false;
 
-      // PeerJS無料サーバーに適合する安全なID形式
-      const peerHostId = 'trmp-' + roomCode.toLowerCase();
-      netState.peer = new Peer(peerHostId);
+      const peerOptions = {
+        debug: 0,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
+          ]
+        }
+      };
+
+      try {
+        // IDを指定せずに初期化することでサーバー側でのID衝突や_abortエラーを根絶
+        netState.peer = new Peer(peerOptions);
+      } catch (err) {
+        console.warn('Peer init error:', err);
+        return;
+      }
 
       netState.peer.on('open', (id) => {
-        logToast(`部屋【${roomCode}】を開設しました！`);
+        netState.roomCode = id;
+        const displayCode = document.getElementById('displayRoomCode');
+        if (displayCode) displayCode.textContent = id;
+        logToast(`部屋【${id}】を作成しました！招待リンクを友達に送ってください`);
         updateLobbyUI();
         updateNetworkStatusUI();
       });
@@ -1803,35 +1899,51 @@
         conn.on('close', () => {
           handlePlayerDisconnect(conn);
         });
+
+        conn.on('error', (err) => {
+          console.warn('Connection error:', err);
+        });
       });
 
       netState.peer.on('error', (err) => {
-        console.error('Peer host error:', err);
-        if (err.type === 'unavailable-id') {
-          logToast('部屋番号が使用中でした。別の部屋番号を再生成します');
-          const newCode = Math.floor(1000 + Math.random() * 9000).toString();
-          document.getElementById('displayRoomCode').textContent = newCode;
-          setupPeerHost(newCode, myName);
+        // 切断時や一時的なWebSocket切断によるクラッシュを防止
+        if (err && err.type === 'peer-unavailable') {
+          logToast('指定された部屋が見つかりませんでした');
         } else {
-          logToast('接続待機エラー: ' + err.type);
+          console.warn('Peer warning handled:', err ? (err.type || err.message) : err);
         }
       });
     }
 
     function setupPeerGuest(roomCode, myName) {
       if (netState.peer) {
-        netState.peer.destroy();
+        try { netState.peer.destroy(); } catch (e) {}
       }
 
       netState.isOnline = true;
       netState.isHost = false;
       netState.roomCode = roomCode;
 
-      netState.peer = new Peer();
+      const peerOptions = {
+        debug: 0,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
+          ]
+        }
+      };
+
+      try {
+        netState.peer = new Peer(peerOptions);
+      } catch (err) {
+        console.warn('Guest Peer init error:', err);
+        logToast('通信の初期化に失敗しました');
+        return;
+      }
 
       netState.peer.on('open', () => {
-        const targetHostId = 'trmp-' + roomCode.toLowerCase();
-        logToast(`部屋【${roomCode}】に接続しています…`);
+        const targetHostId = roomCode.trim();
         const conn = netState.peer.connect(targetHostId, { reliable: true });
 
         conn.on('open', () => {
@@ -1855,11 +1967,19 @@
           logToast('ホストとの接続が切断されました');
           disconnectToOffline();
         });
+
+        conn.on('error', (err) => {
+          console.warn('Guest connection error:', err);
+          logToast('ホストへの接続中にエラーが発生しました');
+        });
       });
 
       netState.peer.on('error', (err) => {
-        console.error('Guest connection error:', err);
-        logToast('部屋に接続できませんでした。部屋番号を確認してください。');
+        if (err && err.type === 'peer-unavailable') {
+          logToast('指定された部屋コードが見つかりません。コードを確認してください。');
+        } else {
+          console.warn('Peer warning handled:', err ? (err.type || err.message) : err);
+        }
       });
     }
 
@@ -1893,11 +2013,12 @@
         if (!p) return;
 
         if (data.actionType === 'draw_card') {
+          if (state.drawnThisTurn) return;
           const card = drawCardFromDeck();
           if (card) {
             card.isHiddenFromReveal = state.kRevealedStatus[slotId];
             state.players[slotId].hand.push(card);
-            state.drawnThisTurn = card.id;
+            state.drawnThisTurn = true;
             playSound('draw');
             renderAll();
             broadcastGameState('sync');
@@ -1908,7 +2029,7 @@
           playCardsAction(p, cardsToPlay);
         } else if (data.actionType === 'pass') {
           logToast(`${p.name} がパスしました`);
-          state.drawnThisTurn = null;
+          state.drawnThisTurn = false;
           nextTurn();
         } else if (data.actionType === 'choose_color') {
           state.activeColor = data.data.color;
@@ -1976,6 +2097,7 @@
         state.drawStack = s.drawStack;
         state.gameEnded = s.gameEnded;
         state.kRevealedStatus = s.kRevealedStatus;
+        state.drawnThisTurn = s.drawnThisTurn;
 
         if (data.actionType === 'dice_rolled') {
           rollDiceForStartingPlayer(data.payload.rollNumber);
@@ -2080,6 +2202,38 @@
       logToast('オフラインモードに切り替えました');
     }
 
+    // --- STREAMING_CHUNK:Safeguarding network instantiation against iframe Canvas restrictions ---
+    function isWebSocketAllowed() {
+      // Check if we are inside a restricted sandbox iframe
+      try {
+        if (window.self !== window.top && window.location.origin === 'null') {
+          return false;
+        }
+      } catch (e) {
+        // Cross-origin iframe restrictions
+      }
+      return true;
+    }
+
+    function safeSetupPeerHost(roomCode, myName) {
+      try {
+        setupPeerHost(roomCode, myName);
+      } catch (err) {
+        console.warn('Network error:', err);
+        logToast('通信エラーが発生しました: ' + err.message);
+      }
+    }
+
+    function safeSetupPeerGuest(roomCode, myName) {
+      try {
+        setupPeerGuest(roomCode, myName);
+      } catch (err) {
+        console.warn('Network error:', err);
+        logToast('通信エラーが発生しました: ' + err.message);
+      }
+    }
+
+    // --- STREAMING_CHUNK:Binding UI controls and initial startup sequence ---
     document.getElementById('btnMultiplayerMenu').addEventListener('click', () => {
       document.getElementById('modalMultiplayer').classList.remove('hidden');
       updateLobbyUI();
@@ -2090,14 +2244,14 @@
 
     document.getElementById('btnCreateRoom').addEventListener('click', () => {
       const name = document.getElementById('inputPlayerName').value.trim() || 'ホスト';
-      const code = Math.floor(1000 + Math.random() * 9000).toString();
+      const code = generateRoomCode();
       document.getElementById('displayRoomCode').textContent = code;
       document.getElementById('multiplayerActionSection').classList.add('hidden');
       document.getElementById('multiplayerLobbySection').classList.remove('hidden');
       document.getElementById('hostControlArea').classList.remove('hidden');
       document.getElementById('guestWaitMsg').classList.add('hidden');
 
-      setupPeerHost(code, name);
+      safeSetupPeerHost(code, name);
       updateNetworkStatusUI();
     });
 
@@ -2108,7 +2262,7 @@
         logToast('部屋コードを入力してください');
         return;
       }
-      setupPeerGuest(code, name);
+      safeSetupPeerGuest(code, name);
     });
 
     document.getElementById('btnCopyInviteLink').addEventListener('click', () => {
@@ -2163,13 +2317,18 @@
     if (btnRulesOk) btnRulesOk.addEventListener('click', () => modalRules.classList.add('hidden'));
 
     window.addEventListener('load', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const roomFromUrl = urlParams.get('room');
-      if (roomFromUrl) {
-        document.getElementById('inputRoomCode').value = roomFromUrl;
-        document.getElementById('modalMultiplayer').classList.remove('hidden');
-        logToast(`招待リンクを受け取りました！名前を入力して「参加」を押してください`);
-      } else {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomFromUrl = urlParams.get('room');
+        if (roomFromUrl && isWebSocketAllowed()) {
+          document.getElementById('inputRoomCode').value = roomFromUrl;
+          document.getElementById('modalMultiplayer').classList.remove('hidden');
+          logToast(`招待リンクを受け取りました！名前を入力して「参加」を押してください`);
+        } else {
+          initGame();
+        }
+      } catch (e) {
+        console.warn('URL param or load error:', e);
         initGame();
       }
     });
