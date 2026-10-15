@@ -941,7 +941,7 @@
       if (state.drawStack > 0) {
         const canDefend = state.players[cur.id].hand.some(c => c.rank === 2 || c.isJoker);
         if (!canDefend) {
-          logToast(`${cur.name}は防御カードを持っていません！累積${state.drawStack}枚引きます`);
+          logToast(`【ドロー2発動中！】${cur.name}は防御カード（2/Joker）を持っていません！累積${state.drawStack}枚引きます`);
           playSound('draw');
           const count = state.drawStack;
           for (let i = 0; i < count; i++) {
@@ -957,8 +957,10 @@
 
           setTimeout(() => {
             nextTurn();
-          }, 1200);
+          }, 1400);
           return;
+        } else {
+          logToast(`【ドロー2発動中！】防御カード（2またはJoker）を出すか、山札から${state.drawStack}枚引いてください`);
         }
       }
 
@@ -1282,7 +1284,7 @@
       if (drawCount > 0) {
         state.drawStack += drawCount;
         playSound('special');
-        logToast(`[ドロー2発動！] ドロー累積が +${state.drawStack} 枚になりました！`);
+        logToast(`[ドロー2効果！] ドロー累積が +${state.drawStack} 枚になりました！`);
       }
 
       const kCount = playedCards.filter(c => c.rank === 13).length;
@@ -1604,25 +1606,15 @@
       const cur = getCurrentPlayer();
       if (cur.id !== netState.mySlotId || state.gameEnded) return;
 
-      if (state.drawnThisTurn) {
-        logToast('このターンはすでに山札から1枚引いています。「出す」か「パスして終了」を選択してください。');
-        playSound('warn');
-        return;
-      }
-
       if (netState.isOnline && !netState.isHost) {
         sendActionToHost('draw_card');
         return;
       }
 
       if (state.drawStack > 0) {
-        const hasDefend = state.players[cur.id].hand.some(c => c.rank === 2 || c.isJoker);
-        if (hasDefend) {
-          logToast('防御できる2またはJokerを持っています！出せます。');
-          return;
-        }
-        playSound('draw');
         const count = state.drawStack;
+        logToast(`ドロー2累積ペナルティにより、山札から${count}枚引きました`);
+        playSound('draw');
         for (let i = 0; i < count; i++) {
           const card = drawCardFromDeck();
           if (card) {
@@ -1634,7 +1626,15 @@
         state.drawnThisTurn = true;
         renderAll();
         broadcastGameState('sync');
-        nextTurn();
+        setTimeout(() => {
+          nextTurn();
+        }, 1000);
+        return;
+      }
+
+      if (state.drawnThisTurn) {
+        logToast('このターンはすでに山札から1枚引いています。「出す」か「パスして終了」を選択してください。');
+        playSound('warn');
         return;
       }
 
