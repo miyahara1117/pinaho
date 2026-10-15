@@ -293,7 +293,7 @@
               <i class="fa-solid fa-right-to-bracket"></i> 部屋番号で参加する
             </h4>
             <div class="flex gap-2 mt-2">
-              <input id="inputRoomCode" type="text" placeholder="部屋コード (例: TRUMP-1234)"
+              <input id="inputRoomCode" type="text" pattern="[0-9]*" inputmode="numeric" placeholder="部屋番号 (例: 1234)"
                 class="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white uppercase font-bold focus:border-amber-400 focus:outline-none" />
               <button id="btnJoinRoom" class="bg-amber-500 hover:bg-amber-400 text-black font-black px-4 py-2 rounded-xl text-xs shadow transition">
                 参加
@@ -304,8 +304,8 @@
 
         <div id="multiplayerLobbySection" class="hidden space-y-4">
           <div class="bg-indigo-950/60 border-2 border-indigo-500/80 rounded-2xl p-4 text-center">
-            <span class="text-[11px] text-indigo-300 font-bold uppercase tracking-wider">部屋コード</span>
-            <div id="displayRoomCode" class="text-2xl font-black text-amber-300 tracking-wider my-1">TRUMP-XXXX</div>
+            <span class="text-[11px] text-indigo-300 font-bold uppercase tracking-wider">部屋番号</span>
+            <div id="displayRoomCode" class="text-3xl font-black text-amber-300 tracking-wider my-1">1234</div>
             
             <button id="btnCopyInviteLink" class="mt-2 bg-indigo-800/90 hover:bg-indigo-700 text-indigo-100 text-xs font-bold px-3 py-1.5 rounded-lg border border-indigo-400 flex items-center justify-center gap-1.5 mx-auto transition">
               <i class="fa-solid fa-copy"></i> 招待用リンクをコピー
@@ -600,14 +600,28 @@
       isOnline: false,
       isHost: true,
       mySlotId: 'A', // この端末が操作するスロット ('A', 'B', 'C', 'D')
-      roomCode: null,
+      roomCode: null, // 数字のみ (例: "1234")
       peer: null,
       connections: {},
       hostConn: null
     };
 
+    // 数字のみの部屋番号を生成（4桁）
     function generateRoomCode() {
-      return 'TRUMP-' + Math.floor(1000 + Math.random() * 9000);
+      return String(Math.floor(1000 + Math.random() * 9000));
+    }
+
+    // 数字コードをPeerID形式に内部変換（衝突防止用プレフィックス）
+    function codeToPeerId(code) {
+      const cleanDigits = String(code).replace(/[^0-9]/g, '');
+      return `pinaho-room-${cleanDigits}`;
+    }
+
+    // PeerIDから数字のみを抽出
+    function peerIdToCode(peerId) {
+      if (!peerId) return '';
+      const match = peerId.match(/\d+/g);
+      return match ? match.join('') : peerId;
     }
 
     function copyTextToClipboard(text) {
@@ -1849,14 +1863,18 @@
     }
 
     // --- STREAMING_CHUNK:Establishing online multiplayer handling ---
-    function setupPeerHost(roomCode, myName) {
+    function setupPeerHost(roomDigits, myName) {
       if (netState.peer) {
         try { netState.peer.destroy(); } catch (e) {}
       }
 
+      const cleanCode = String(roomDigits).replace(/[^0-9]/g, '') || generateRoomCode();
+      const targetPeerId = codeToPeerId(cleanCode);
+
       netState.isOnline = true;
       netState.isHost = true;
       netState.mySlotId = 'A';
+      netState.roomCode = cleanCode;
       netState.connections = {};
 
       PLAYERS[0].name = `${myName} (ホスト)`;
@@ -1873,18 +1891,18 @@
       };
 
       try {
-        // IDを指定せずに初期化することでサーバー側でのID衝突や_abortエラーを根絶
-        netState.peer = new Peer(peerOptions);
+        netState.peer = new Peer(targetPeerId, peerOptions);
       } catch (err) {
         console.warn('Peer init error:', err);
         return;
       }
 
       netState.peer.on('open', (id) => {
-        netState.roomCode = id;
+        const numericCode = peerIdToCode(id) || cleanCode;
+        netState.roomCode = numericCode;
         const displayCode = document.getElementById('displayRoomCode');
-        if (displayCode) displayCode.textContent = id;
-        logToast(`部屋【${id}】を作成しました！招待リンクを友達に送ってください`);
+        if (displayCode) displayCode.textContent = numericCode;
+        logToast(`部屋番号【${numericCode}】を作成しました！`);
         updateLobbyUI();
         updateNetworkStatusUI();
       });
@@ -1906,8 +1924,12 @@
       });
 
       netState.peer.on('error', (err) => {
-        // 切断時や一時的なWebSocket切断によるクラッシュを防止
-        if (err && err.type === 'peer-unavailable') {
+        // IDが既に使用されている場合は別の数字で再試行
+        if (err && err.type === 'unavailable-id') {
+          const newCode = generateRoomCode();
+          logToast(`部屋番号が重複したため新番号【${newCode}】で再作成中…`);
+          setupPeerHost(newCode, myName);
+        } else if (err && err.type === 'peer-unavailable') {
           logToast('指定された部屋が見つかりませんでした');
         } else {
           console.warn('Peer warning handled:', err ? (err.type || err.message) : err);
@@ -1915,14 +1937,20 @@
       });
     }
 
-    function setupPeerGuest(roomCode, myName) {
+    function setupPeerGuest(roomDigits, myName) {
       if (netState.peer) {
         try { netState.peer.destroy(); } catch (e) {}
       }
 
+      const cleanCode = String(roomDigits).replace(/[^0-9]/g, '');
+      if (!cleanCode) {
+        logToast('有効な部屋番号（数字）を入力してください');
+        return;
+      }
+
       netState.isOnline = true;
       netState.isHost = false;
-      netState.roomCode = roomCode;
+      netState.roomCode = cleanCode;
 
       const peerOptions = {
         debug: 0,
@@ -1943,7 +1971,7 @@
       }
 
       netState.peer.on('open', () => {
-        const targetHostId = roomCode.trim();
+        const targetHostId = codeToPeerId(cleanCode);
         const conn = netState.peer.connect(targetHostId, { reliable: true });
 
         conn.on('open', () => {
@@ -1956,7 +1984,7 @@
           document.getElementById('multiplayerLobbySection').classList.remove('hidden');
           document.getElementById('hostControlArea').classList.add('hidden');
           document.getElementById('guestWaitMsg').classList.remove('hidden');
-          document.getElementById('displayRoomCode').textContent = roomCode;
+          document.getElementById('displayRoomCode').textContent = cleanCode;
         });
 
         conn.on('data', (data) => {
@@ -1976,7 +2004,7 @@
 
       netState.peer.on('error', (err) => {
         if (err && err.type === 'peer-unavailable') {
-          logToast('指定された部屋コードが見つかりません。コードを確認してください。');
+          logToast('指定された部屋番号が見つかりません。番号を確認してください。');
         } else {
           console.warn('Peer warning handled:', err ? (err.type || err.message) : err);
         }
@@ -2257,9 +2285,10 @@
 
     document.getElementById('btnJoinRoom').addEventListener('click', () => {
       const name = document.getElementById('inputPlayerName').value.trim() || 'ゲスト';
-      const code = document.getElementById('inputRoomCode').value.trim().toUpperCase();
+      const rawCode = document.getElementById('inputRoomCode').value.trim();
+      const code = rawCode.replace(/[^0-9]/g, '');
       if (!code) {
-        logToast('部屋コードを入力してください');
+        logToast('部屋番号（数字）を入力してください');
         return;
       }
       safeSetupPeerGuest(code, name);
@@ -2319,11 +2348,12 @@
     window.addEventListener('load', () => {
       try {
         const urlParams = new URLSearchParams(window.location.search);
-        const roomFromUrl = urlParams.get('room');
+        const rawRoom = urlParams.get('room');
+        const roomFromUrl = rawRoom ? rawRoom.replace(/[^0-9]/g, '') : null;
         if (roomFromUrl && isWebSocketAllowed()) {
           document.getElementById('inputRoomCode').value = roomFromUrl;
           document.getElementById('modalMultiplayer').classList.remove('hidden');
-          logToast(`招待リンクを受け取りました！名前を入力して「参加」を押してください`);
+          logToast(`招待リンク（部屋番号: ${roomFromUrl}）を受け取りました！名前を入力して「参加」を押してください`);
         } else {
           initGame();
         }
