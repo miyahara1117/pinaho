@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>オリジナルトランプ対戦カードゲーム</title>
+  <title>ピナホ - UNO＋麻雀のトランプゲーム</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -70,11 +70,93 @@
 </head>
 <body class="bg-gray-950 text-white min-h-screen flex flex-col justify-between overflow-hidden">
 
+  <!-- ==================== スタート画面（蓋絵 / モード選択） ==================== -->
+  <div id="screenTitle" class="fixed inset-0 z-50 flex flex-col items-center justify-between p-6 bg-radial from-emerald-950 via-gray-950 to-black select-none overflow-y-auto">
+    <!-- 背景装飾アイコン -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-10 flex flex-wrap items-center justify-around text-8xl text-emerald-400">
+      <i class="fa-solid fa-heart m-8"></i>
+      <i class="fa-solid fa-spade m-8"></i>
+      <i class="fa-solid fa-diamond m-8"></i>
+      <i class="fa-solid fa-club m-8"></i>
+    </div>
+
+    <!-- ヘッダー装飾 / バージョン -->
+    <div class="w-full flex justify-between items-center text-xs text-emerald-400/80 font-bold tracking-wider z-10">
+      <span class="flex items-center gap-1.5"><i class="fa-solid fa-crown text-amber-400"></i> PINAHO OFFICIAL</span>
+      <span class="bg-emerald-900/60 border border-emerald-600/50 px-2 py-0.5 rounded-full">Web Edition</span>
+    </div>
+
+    <!-- メインロゴ・タイトルエリア（画像に差し替え） -->
+    <div class="flex flex-col items-center text-center my-auto z-10 py-2 w-full max-w-md">
+      <!-- 添付のメインタイトルイラスト -->
+      <div class="relative w-full flex justify-center mb-2">
+        <img src="title_logo.jpg" alt="ピナホ 究極の心理戦カードゲーム" 
+             class="w-full max-w-[340px] sm:max-w-[420px] h-auto object-contain drop-shadow-[0_10px_25px_rgba(245,158,11,0.35)] rounded-2xl transition-transform duration-300 hover:scale-[1.02]"
+             onerror="this.onerror=null; this.src='title_logo.png';" />
+      </div>
+
+      <!-- プレイヤー名クイック入力 -->
+      <div class="w-full max-w-xs mt-3 bg-black/60 border border-emerald-700/60 p-3 rounded-2xl shadow-lg backdrop-blur-sm">
+        <label class="block text-[11px] font-bold text-gray-300 text-left mb-1 flex items-center gap-1">
+          <i class="fa-solid fa-user-tag text-amber-400"></i> プレイヤー名
+        </label>
+        <input id="inputTitlePlayerName" type="text" maxlength="10" value="あなた" placeholder="名前を入力"
+          class="w-full bg-gray-900 border border-gray-700 focus:border-amber-400 text-white font-bold text-sm px-3 py-2 rounded-xl text-center outline-none transition" />
+      </div>
+
+      <!-- モード選択ボタン群 -->
+      <div class="w-full max-w-xs mt-4 flex flex-col gap-3">
+        <!-- シングルプレイ -->
+        <button id="btnTitleSingle" class="group relative overflow-hidden bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-black py-3.5 px-6 rounded-2xl shadow-xl shadow-emerald-950/60 border-2 border-emerald-300/80 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-black/30 flex items-center justify-center text-lg text-emerald-200">
+              <i class="fa-solid fa-robot"></i>
+            </div>
+            <div class="text-left">
+              <div class="text-sm font-black tracking-wide">ひとりで遊ぶ</div>
+              <div class="text-[10px] text-emerald-200/80 font-medium">AI 3人とサクッと対戦</div>
+            </div>
+          </div>
+          <i class="fa-solid fa-dice text-xl text-amber-300 group-hover:rotate-12 transition-transform"></i>
+        </button>
+
+        <!-- オンラインマルチ -->
+        <button id="btnTitleMulti" class="group relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-500 hover:to-purple-500 text-white font-black py-3.5 px-6 rounded-2xl shadow-xl shadow-indigo-950/60 border-2 border-indigo-300/80 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-black/30 flex items-center justify-center text-lg text-indigo-200">
+              <i class="fa-solid fa-users-viewfinder"></i>
+            </div>
+            <div class="text-left">
+              <div class="text-sm font-black tracking-wide">友達と対戦する</div>
+              <div class="text-[10px] text-indigo-200/80 font-medium">部屋作成・番号で参加 (最大4人)</div>
+            </div>
+          </div>
+          <i class="fa-solid fa-arrow-right text-base text-amber-300 group-hover:translate-x-1 transition-transform"></i>
+        </button>
+
+        <!-- ルール確認ボタン -->
+        <button id="btnTitleRules" class="bg-gray-900/80 hover:bg-gray-800 text-gray-300 hover:text-white text-xs font-bold py-2.5 px-4 rounded-xl border border-gray-700 transition flex items-center justify-center gap-1.5 mt-1">
+          <i class="fa-solid fa-circle-question text-emerald-400"></i> ゲームのルールを見る
+        </button>
+      </div>
+    </div>
+
+    <!-- フッター注記 -->
+    <div class="text-[10px] text-gray-400 text-center z-10 pb-2">
+      手札合計ロン / ツモ上がり / スキップ・リバース・ドロー2・強制オープン
+    </div>
+  </div>
+
   <!-- ヘッダー -->
   <header class="w-full bg-black/60 backdrop-blur-md border-b border-emerald-900/60 px-3 sm:px-4 py-2 flex items-center justify-between z-20">
     <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+      <!-- タイトルへ戻るボタン -->
+      <button id="btnBackToTitle" class="bg-gray-800/90 hover:bg-gray-700 text-gray-200 text-xs px-2 sm:px-2.5 py-1 rounded-md border border-gray-600 transition flex items-center gap-1 font-bold" title="タイトル画面へ">
+        <i class="fa-solid fa-house"></i> <span class="hidden sm:inline">タイトル</span>
+      </button>
+
       <div class="bg-amber-500 text-black font-black px-2 sm:px-2.5 py-1 rounded-md text-[11px] sm:text-xs shadow tracking-wider flex items-center gap-1">
-        <i class="fa-solid fa-cards"></i> <span>TRUMP BATTLE</span>
+        <i class="fa-solid fa-cards"></i> <span>ピナホ</span>
       </div>
       
       <!-- ルーム状態バッジ -->
@@ -419,9 +501,14 @@
         <div id="allPlayersFinalHands" class="space-y-3"></div>
       </div>
 
-      <button id="btnPlayAgain" class="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-black font-black py-2.5 sm:py-3 rounded-xl shadow-lg border border-amber-300 text-sm sm:text-base transition">
-        もう一度遊ぶ
-      </button>
+      <div class="flex flex-col sm:flex-row gap-2 w-full">
+        <button id="btnPlayAgain" class="flex-1 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-black font-black py-2.5 sm:py-3 rounded-xl shadow-lg border border-amber-300 text-sm sm:text-base transition">
+          もう一度遊ぶ
+        </button>
+        <button id="btnGameOverToTitle" class="bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold py-2.5 sm:py-3 px-4 rounded-xl border border-gray-600 text-xs sm:text-sm transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-house"></i> タイトルへ
+        </button>
+      </div>
     </div>
   </div>
 
@@ -2227,6 +2314,74 @@
     }
 
     // --- 5. UIイベントリスナー登録 ---
+    const screenTitle = document.getElementById('screenTitle');
+    const inputTitleName = document.getElementById('inputTitlePlayerName');
+    const inputPlayerName = document.getElementById('inputPlayerName');
+
+    // プレイヤー名同期
+    if (inputTitleName && inputPlayerName) {
+      inputTitleName.addEventListener('input', (e) => {
+        inputPlayerName.value = e.target.value.trim() || 'あなた';
+      });
+      inputPlayerName.addEventListener('input', (e) => {
+        inputTitleName.value = e.target.value.trim() || 'あなた';
+      });
+    }
+
+    // タイトル「ひとりで遊ぶ（AI対戦）」
+    document.getElementById('btnTitleSingle').addEventListener('click', () => {
+      const myName = inputTitleName.value.trim() || 'あなた';
+      PLAYERS[0].name = `${myName}`;
+      PLAYERS[0].isAI = false;
+      PLAYERS[1].name = 'Bさん'; PLAYERS[1].isAI = true;
+      PLAYERS[2].name = 'Cさん'; PLAYERS[2].isAI = true;
+      PLAYERS[3].name = 'Dさん'; PLAYERS[3].isAI = true;
+      netState.isOnline = false;
+      netState.isHost = true;
+      netState.mySlotId = 'A';
+
+      screenTitle.classList.add('hidden');
+      updateNetworkStatusUI();
+      initGame(); // 親決めサイコロへ直行！
+    });
+
+    // タイトル「友達と対戦する（オンライン）」
+    document.getElementById('btnTitleMulti').addEventListener('click', () => {
+      const myName = inputTitleName.value.trim() || 'あなた';
+      inputPlayerName.value = myName;
+      screenTitle.classList.add('hidden');
+      document.getElementById('modalMultiplayer').classList.remove('hidden');
+      updateLobbyUI();
+    });
+
+    // タイトル「ルールを見る」
+    document.getElementById('btnTitleRules').addEventListener('click', () => {
+      document.getElementById('modalRules').classList.remove('hidden');
+    });
+
+    // ヘッダー「タイトルへ戻る」
+    const btnBackToTitle = document.getElementById('btnBackToTitle');
+    if (btnBackToTitle) {
+      btnBackToTitle.addEventListener('click', () => {
+        if (netState.isOnline) {
+          disconnectToOffline();
+        }
+        screenTitle.classList.remove('hidden');
+      });
+    }
+
+    // ゲーム終了画面「タイトルへ」
+    const btnGameOverToTitle = document.getElementById('btnGameOverToTitle');
+    if (btnGameOverToTitle) {
+      btnGameOverToTitle.addEventListener('click', () => {
+        document.getElementById('modalGameOver').classList.add('hidden');
+        if (netState.isOnline) {
+          disconnectToOffline();
+        }
+        screenTitle.classList.remove('hidden');
+      });
+    }
+
     document.getElementById('btnMultiplayerMenu').addEventListener('click', () => {
       document.getElementById('modalMultiplayer').classList.remove('hidden');
       updateLobbyUI();
@@ -2316,15 +2471,18 @@
         const rawRoom = urlParams.get('room');
         const roomFromUrl = rawRoom ? rawRoom.replace(/[^0-9]/g, '') : null;
         if (roomFromUrl && isWebSocketAllowed()) {
+          // 招待リンクから開いた場合はタイトルを閉じて即座に参加モーダルを開く
+          screenTitle.classList.add('hidden');
           document.getElementById('inputRoomCode').value = roomFromUrl;
           document.getElementById('modalMultiplayer').classList.remove('hidden');
           logToast(`招待リンク（部屋番号: ${roomFromUrl}）を受け取りました！名前を入力して「参加」を押してください`);
         } else {
-          initGame();
+          // 通常アクセス時はタイトル画面（蓋絵）で待機
+          screenTitle.classList.remove('hidden');
         }
       } catch (e) {
         console.warn('URL param or load error:', e);
-        initGame();
+        screenTitle.classList.remove('hidden');
       }
     });
   </script>
