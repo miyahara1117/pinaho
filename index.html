@@ -158,6 +158,8 @@
   </div>
 
   <!-- ヘッダー（ゲーム画面用） -->
+  <header class="w-full bg-black/60 backdrop-blur-md border-b border-emerald-900/60 px-2 sm:px-4 py-1.5 sm:py-2 flex items-center justify-between z-20">
+    <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
       <button id="btnBackToTitle" class="bg-gray-800/90 hover:bg-gray-700 text-gray-200 text-xs px-2 sm:px-2.5 py-1 rounded-md border border-gray-600 transition flex items-center gap-1 font-bold" title="タイトル画面へ">
         <i class="fa-solid fa-house"></i> <span class="hidden sm:inline">タイトル</span>
       </button>
@@ -1989,10 +1991,11 @@
       if (displayCode) displayCode.textContent = cleanCode;
 
       const peerOptions = {
-        debug: 0,
+        debug: 1,
         config: {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
             { urls: 'stun:global.stun.twilio.com:3478' }
           ]
         }
@@ -2002,6 +2005,7 @@
         netState.peer = new Peer(targetPeerId, peerOptions);
       } catch (err) {
         console.warn('Peer init error:', err);
+        logToast('通信の初期化に失敗しました');
         return;
       }
 
@@ -2015,9 +2019,11 @@
 
       netState.peer.on('connection', (conn) => {
         conn.on('open', () => {
-          conn.on('data', (data) => {
-            handleHostReceivedData(conn, data);
-          });
+          netState.connections[conn.peer] = conn;
+        });
+
+        conn.on('data', (data) => {
+          handleHostReceivedData(conn, data);
         });
 
         conn.on('close', () => {
@@ -2058,10 +2064,11 @@
       netState.roomCode = cleanCode;
 
       const peerOptions = {
-        debug: 0,
+        debug: 1,
         config: {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
             { urls: 'stun:global.stun.twilio.com:3478' }
           ]
         }
