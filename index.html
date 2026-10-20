@@ -1965,10 +1965,11 @@
         updateNetworkStatusUI();
       });
 
+      // ゲストからの接続を受け付ける
       netState.peer.on('connection', (conn) => {
-        conn.on('open', () => {
-          netState.connections[conn.peer] = conn;
-        });
+        // ★重要: connection イベントが来た時点ですでに通信路は確立されているため、
+        // conn.on('open') で二重に包まず即座にコネクションを保持・リスナーを登録する
+        netState.connections[conn.peer] = conn;
 
         conn.on('data', (data) => {
           handleHostReceivedData(conn, data);
@@ -1980,6 +1981,11 @@
 
         conn.on('error', (err) => {
           console.warn('Host connection error:', err);
+        });
+
+        // 念のため open イベントでもコネクションを再確認
+        conn.on('open', () => {
+          netState.connections[conn.peer] = conn;
         });
       });
 
@@ -2017,19 +2023,34 @@
 
       netState.peer.on('open', (myPeerId) => {
         const conn = netState.peer.connect(cleanCode, { reliable: true });
+        netState.hostConn = conn;
 
-        conn.on('open', () => {
-          netState.hostConn = conn;
-          conn.send({
-            type: 'JOIN_REQUEST',
-            name: myName
-          });
-          logToast('ホストに接続しました！');
-        });
-
+        // ★重要: データ受信リスナーは即座に登録しておく
         conn.on('data', (data) => {
           handleGuestReceivedData(data);
         });
+
+        const sendJoin = () => {
+          if (conn.open) {
+            conn.send({
+              type: 'JOIN_REQUEST',
+              name: myName
+            });
+            logToast('ホストに接続しました！');
+          }
+        };
+
+        // open イベントを待つ
+        conn.on('open', () => {
+          sendJoin();
+        });
+
+        // 万が一 open イベントが既に通り過ぎていた場合のフォールバック（500ms後）
+        setTimeout(() => {
+          if (conn.open) {
+            sendJoin();
+          }
+        }, 500);
 
         conn.on('close', () => {
           logToast('ホストとの接続が切断されました', true);
