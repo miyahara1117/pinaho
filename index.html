@@ -372,8 +372,8 @@
               <i class="fa-solid fa-right-to-bracket"></i> 部屋番号で参加する
             </h4>
             <div class="flex gap-2 mt-2">
-              <input id="inputRoomCode" type="text" pattern="[0-9]*" inputmode="numeric" placeholder="4桁の部屋番号 (例: 1234)"
-                class="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white font-bold tracking-widest text-center focus:border-amber-400 focus:outline-none" />
+              <input id="inputRoomCode" type="text" placeholder="部屋コード (例: PINAHO-7K29)"
+                class="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white font-bold tracking-widest text-center uppercase focus:border-amber-400 focus:outline-none" />
               <button id="btnJoinRoom" class="bg-amber-500 hover:bg-amber-400 active:scale-95 text-black font-black px-4 py-2 rounded-xl text-xs shadow transition flex items-center gap-1">
                 <span id="btnJoinText">参加</span>
               </button>
@@ -383,13 +383,13 @@
 
         <div id="multiplayerLobbySection" class="hidden space-y-4">
           <div class="bg-indigo-950/60 border-2 border-indigo-500/80 rounded-2xl p-4 text-center">
-            <span class="text-[11px] text-indigo-300 font-bold uppercase tracking-wider">部屋番号</span>
-            <div id="displayRoomCode" class="text-3xl font-black text-amber-300 tracking-wider my-1">----</div>
+            <span class="text-[11px] text-indigo-300 font-bold uppercase tracking-wider">部屋コード</span>
+            <div id="displayRoomCode" class="text-2xl sm:text-3xl font-black text-amber-300 tracking-wider my-1 break-all select-all">PINAHO-XXXX</div>
             
             <button id="btnCopyInviteLink" class="mt-2 bg-indigo-800/90 hover:bg-indigo-700 text-indigo-100 text-xs font-bold px-3 py-1.5 rounded-lg border border-indigo-400 flex items-center justify-center gap-1.5 mx-auto transition">
               <i class="fa-solid fa-copy"></i> 招待用リンクをコピー
             </button>
-            <div id="copySuccessMsg" class="hidden text-[11px] text-emerald-400 font-bold mt-1">コピーしました！LINE等で送ってください</div>
+            <div id="copySuccessMsg" class="hidden text-[11px] text-emerald-400 font-bold mt-1">コピーしました！友達に送信してください</div>
           </div>
 
           <div>
@@ -723,19 +723,32 @@
       isOnline: false,
       isHost: true,
       mySlotId: 'A',
-      roomCode: null, // 4桁の部屋番号
+      roomCode: null, // 例: 'PINAHO-7K29'
       peer: null,
       connections: {},
       hostConn: null
     };
 
     function generateRoomCode() {
-      return String(Math.floor(1000 + Math.random() * 9000));
+      // 誰とも被りにくい4文字の英数字（視認性の高い文字のみ）
+      const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+      let code = '';
+      for (let i = 0; i < 4; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return `PINAHO-${code}`;
     }
 
-    function codeToPeerId(code) {
-      const cleanDigits = String(code).replace(/[^0-9]/g, '');
-      return `PINAHO-${cleanDigits}`;
+    function normalizeRoomCode(input) {
+      if (!input) return '';
+      let clean = input.trim().toUpperCase();
+      // もし末尾の4文字だけ打たれた場合は自動で補完
+      if (!clean.startsWith('PINAHO-')) {
+        clean = clean.replace(/^PINAHO/, '');
+        clean = clean.replace(/[^A-Z0-9]/g, '');
+        clean = `PINAHO-${clean}`;
+      }
+      return clean;
     }
 
     function copyTextToClipboard(text) {
@@ -1971,29 +1984,29 @@
       }
     }
 
-    function setupPeerHost(roomDigits, myName) {
+    function setupPeerHost(targetRoomCode, myName) {
       cleanupPeer(() => {
-        const cleanCode = String(roomDigits).replace(/[^0-9]/g, '') || generateRoomCode();
-        const targetPeerId = codeToPeerId(cleanCode);
+        const roomCode = targetRoomCode || generateRoomCode();
 
         netState.isOnline = true;
         netState.isHost = true;
         netState.mySlotId = 'A';
-        netState.roomCode = cleanCode;
+        netState.roomCode = roomCode;
         netState.connections = {};
 
         PLAYERS[0].name = `${myName} (ホスト)`;
         PLAYERS[0].isAI = false;
 
         const displayCode = document.getElementById('displayRoomCode');
-        if (displayCode) displayCode.textContent = cleanCode;
+        if (displayCode) displayCode.textContent = roomCode;
 
         try {
-          netState.peer = new Peer(targetPeerId, {
-            debug: 0,
+          netState.peer = new Peer(roomCode, {
+            debug: 1,
             config: {
               iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
                 { urls: 'stun:global.stun.twilio.com:3478' }
               ]
             }
@@ -2005,14 +2018,14 @@
         }
 
         netState.peer.on('open', (id) => {
-          netState.roomCode = cleanCode;
-          if (displayCode) displayCode.textContent = cleanCode;
-          logToast(`部屋番号【${cleanCode}】を作成しました！`);
+          netState.roomCode = id;
+          if (displayCode) displayCode.textContent = id;
+          logToast(`部屋【${id}】を作成しました！`);
           updateLobbyUI();
           updateNetworkStatusUI();
         });
 
-        // ゲストからの接続を直接受け付け
+        // ゲスト接続の受け付け
         netState.peer.on('connection', (conn) => {
           netState.connections[conn.peer] = conn;
 
@@ -2027,30 +2040,26 @@
           conn.on('error', (err) => {
             console.warn('Host connection error:', err);
           });
-
-          conn.on('open', () => {
-            netState.connections[conn.peer] = conn;
-          });
         });
 
         netState.peer.on('error', (err) => {
           console.warn('Peer host error caught:', err ? err.type : err);
           if (err && (err.type === 'unavailable-id' || err.type === 'server-error')) {
             const newCode = generateRoomCode();
-            logToast(`部屋番号が重複または無効なため新番号【${newCode}】で再作成中…`);
+            logToast(`部屋コードが重複したため新コード【${newCode}】で再作成中…`);
             setupPeerHost(newCode, myName);
           } else {
-            logToast('通信待機中… (再接続中)', true);
+            logToast('通信エラーが発生しました', true);
           }
         });
       });
     }
 
-    function setupPeerGuest(roomDigits, myName) {
+    function setupPeerGuest(rawRoomCode, myName) {
       cleanupPeer(() => {
-        const cleanCode = String(roomDigits).replace(/[^0-9]/g, '');
-        if (!cleanCode) {
-          logToast('有効な4桁の部屋番号を入力してください', true);
+        const targetRoomCode = normalizeRoomCode(rawRoomCode);
+        if (!targetRoomCode || targetRoomCode === 'PINAHO-') {
+          logToast('有効な部屋コードを入力してください (例: PINAHO-7K29)', true);
           resetJoinButton();
           return;
         }
@@ -2060,20 +2069,21 @@
         document.getElementById('multiplayerLobbySection').classList.remove('hidden');
         document.getElementById('hostControlArea').classList.add('hidden');
         document.getElementById('guestWaitMsg').classList.remove('hidden');
-        document.getElementById('displayRoomCode').textContent = cleanCode;
+        document.getElementById('displayRoomCode').textContent = targetRoomCode;
 
         netState.isOnline = true;
         netState.isHost = false;
-        netState.roomCode = cleanCode;
+        netState.roomCode = targetRoomCode;
 
-        logToast(`部屋【${cleanCode}】のホストへ接続中…`);
+        logToast(`部屋【${targetRoomCode}】へ接続中…`);
 
         try {
           netState.peer = new Peer(null, {
-            debug: 0,
+            debug: 1,
             config: {
               iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
                 { urls: 'stun:global.stun.twilio.com:3478' }
               ]
             }
@@ -2086,8 +2096,7 @@
         }
 
         netState.peer.on('open', (myPeerId) => {
-          const targetHostId = codeToPeerId(cleanCode);
-          const conn = netState.peer.connect(targetHostId, { reliable: true });
+          const conn = netState.peer.connect(targetRoomCode, { reliable: true });
           netState.hostConn = conn;
 
           conn.on('data', (data) => {
@@ -2108,9 +2117,10 @@
             sendJoin();
           });
 
+          // ハンドシェイク保証（即時完了時のイベント拾い漏れ防止）
           setTimeout(() => {
             if (conn.open) sendJoin();
-          }, 600);
+          }, 400);
 
           conn.on('close', () => {
             logToast('ホストとの接続が切断されました', true);
@@ -2119,13 +2129,13 @@
 
           conn.on('error', (err) => {
             console.warn('Guest connection error:', err);
-            logToast('接続中にエラーが発生しました', true);
+            logToast('ホストへの接続中にエラーが発生しました', true);
           });
         });
 
         netState.peer.on('error', (err) => {
           console.warn('Peer guest error caught:', err ? err.type : err);
-          logToast(`部屋【${cleanCode}】が見つかりません。ホストが待機中か確認してください。`, true);
+          logToast(`部屋【${targetRoomCode}】が見つかりません。ホストが待機中か確認してください。`, true);
           
           document.getElementById('multiplayerLobbySection').classList.add('hidden');
           document.getElementById('multiplayerActionSection').classList.remove('hidden');
@@ -2449,9 +2459,9 @@
     document.getElementById('btnJoinRoom').addEventListener('click', () => {
       const name = document.getElementById('inputPlayerName').value.trim() || 'ゲスト';
       const rawCode = document.getElementById('inputRoomCode').value.trim();
-      const code = rawCode.replace(/[^0-9]/g, '');
-      if (!code) {
-        logToast('4桁の部屋番号を入力してください', true);
+      const code = normalizeRoomCode(rawCode);
+      if (!code || code === 'PINAHO-') {
+        logToast('部屋コードを入力してください (例: PINAHO-7K29)', true);
         return;
       }
 
@@ -2524,12 +2534,12 @@
         updateSoundUI();
         const urlParams = new URLSearchParams(window.location.search);
         const rawRoom = urlParams.get('room');
-        const roomFromUrl = rawRoom ? rawRoom.replace(/[^0-9]/g, '') : null;
-        if (roomFromUrl) {
+        const roomFromUrl = rawRoom ? normalizeRoomCode(rawRoom) : null;
+        if (roomFromUrl && roomFromUrl !== 'PINAHO-') {
           screenTitle.classList.add('hidden');
           document.getElementById('inputRoomCode').value = roomFromUrl;
           document.getElementById('modalMultiplayer').classList.remove('hidden');
-          logToast(`招待リンク（部屋番号: ${roomFromUrl}）を受け取りました！名前を入力して「参加」を押してください`);
+          logToast(`招待リンク（${roomFromUrl}）を受け取りました！名前を入力して「参加」を押してください`);
         } else {
           screenTitle.classList.remove('hidden');
         }
