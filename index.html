@@ -2575,7 +2575,10 @@
           screenTitle.classList.add('hidden');
           document.getElementById('inputRoomCode').value = roomFromUrl;
           document.getElementById('modalMultiplayer').classList.remove('hidden');
-          logToast(`招待リンク（${roomFromUrl}）を受け取りました！名前を入力して「参加」を押してください`);
+          
+          // 招待リンクから開いた場合は即座に接続処理を開始する
+          const myName = inputPlayerName ? (inputPlayerName.value.trim() || 'ゲスト') : 'ゲスト';
+          setupPeerGuest(roomFromUrl, myName);
         } else {
           screenTitle.classList.remove('hidden');
         }
