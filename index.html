@@ -696,6 +696,15 @@
       hostConn: null
     };
 
+    const PEER_CONFIG = {
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:global.stun.twilio.com:3478' }
+        ]
+      }
+    };
+
     function copyTextToClipboard(text) {
       const tempInput = document.createElement("textarea");
       tempInput.value = text;
@@ -1763,7 +1772,7 @@
       document.getElementById('guestWaitMsg').classList.add('hidden');
 
       // サーバー自動採番（エラー・重複・拒絶ゼロ）で Peer を作成
-      netState.peer = new Peer(null, { debug: 1 });
+      netState.peer = new Peer(null, { debug: 1, ...PEER_CONFIG });
 
       netState.peer.on('open', (id) => {
         netState.roomCode = id;
@@ -1825,7 +1834,7 @@
       logToast(`ホスト【${targetCode}】へ接続中…`);
 
       // ゲストはランダムIDで生成し、ホストへ直接 connect
-      netState.peer = new Peer(null, { debug: 1 });
+      netState.peer = new Peer(null, { debug: 1, ...PEER_CONFIG });
 
       netState.peer.on('open', () => {
         const conn = netState.peer.connect(targetCode, { reliable: true });
@@ -1835,29 +1844,28 @@
           handleGuestReceivedData(data);
         });
 
-        // 確実な送信処理（即時・イベント時・タイマーの三重保証）
-        let sent = false;
-        const doSend = () => {
-          if (!sent && conn.open) {
-            sent = true;
+        // 確実な送信処理：ホストから返信（mySlotId）が届くまで500ms毎にノックし続ける
+        const sendJoin = () => {
+          if (netState.mySlotId) {
+            clearInterval(knockInterval);
+            return;
+          }
+          if (conn.open) {
             conn.send({ type: 'JOIN_REQUEST', name: myName });
-            logToast('ホストに参加申請を送りました！');
           }
         };
 
-        conn.on('open', () => {
-          doSend();
-        });
-
-        if (conn.open) doSend();
-        setTimeout(doSend, 600);
+        conn.on('open', sendJoin);
+        const knockInterval = setInterval(sendJoin, 500);
 
         conn.on('close', () => {
+          clearInterval(knockInterval);
           logToast('ホストとの接続が切断されました', true);
           disconnectToOffline();
         });
 
         conn.on('error', (err) => {
+          clearInterval(knockInterval);
           console.error('Guest connection error:', err);
           logToast('接続エラーが発生しました', true);
         });
