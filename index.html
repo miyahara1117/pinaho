@@ -2025,23 +2025,17 @@
           updateNetworkStatusUI();
         });
 
-        // ゲスト接続の受け付け
+        // ゲスト接続の受け付け（即時データリスナー登録で取りこぼし防止）
         netState.peer.on('connection', (conn) => {
-          const registerConn = () => {
-            netState.connections[conn.peer] = conn;
-            conn.on('data', (data) => {
-              handleHostReceivedData(conn, data);
-            });
-            conn.on('close', () => {
-              handlePlayerDisconnect(conn);
-            });
-          };
+          netState.connections[conn.peer] = conn;
+          
+          conn.on('data', (data) => {
+            handleHostReceivedData(conn, data);
+          });
 
-          if (conn.open) {
-            registerConn();
-          } else {
-            conn.on('open', registerConn);
-          }
+          conn.on('close', () => {
+            handlePlayerDisconnect(conn);
+          });
 
           conn.on('error', (err) => {
             console.warn('Host connection error:', err);
