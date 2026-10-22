@@ -1956,154 +1956,181 @@
     }
 
     // --- 4. オンライン通信処理（PINAHO-固定プレフィックス方式） ---
-    function setupPeerHost(roomDigits, myName) {
+    function cleanupPeer(callback) {
       if (netState.peer) {
-        try { netState.peer.destroy(); } catch (e) {}
-      }
-
-      const cleanCode = String(roomDigits).replace(/[^0-9]/g, '') || generateRoomCode();
-      const targetPeerId = codeToPeerId(cleanCode);
-
-      netState.isOnline = true;
-      netState.isHost = true;
-      netState.mySlotId = 'A';
-      netState.roomCode = cleanCode;
-      netState.connections = {};
-
-      PLAYERS[0].name = `${myName} (ホスト)`;
-      PLAYERS[0].isAI = false;
-
-      const displayCode = document.getElementById('displayRoomCode');
-      if (displayCode) displayCode.textContent = cleanCode;
-
-      try {
-        netState.peer = new Peer(targetPeerId, { debug: 1 });
-      } catch (e) {
-        console.error('Peer init error:', e);
-        logToast('通信の初期化に失敗しました', true);
-        return;
-      }
-
-      netState.peer.on('open', (id) => {
-        netState.roomCode = cleanCode;
-        if (displayCode) displayCode.textContent = cleanCode;
-        logToast(`部屋番号【${cleanCode}】を作成しました！`);
-        updateLobbyUI();
-        updateNetworkStatusUI();
-      });
-
-      // ゲストからの接続を直接受け付け
-      netState.peer.on('connection', (conn) => {
-        netState.connections[conn.peer] = conn;
-
-        conn.on('data', (data) => {
-          handleHostReceivedData(conn, data);
-        });
-
-        conn.on('close', () => {
-          handlePlayerDisconnect(conn);
-        });
-
-        conn.on('error', (err) => {
-          console.warn('Host connection error:', err);
-        });
-
-        conn.on('open', () => {
-          netState.connections[conn.peer] = conn;
-        });
-      });
-
-      netState.peer.on('error', (err) => {
-        console.warn('Peer error:', err);
-        if (err && err.type === 'unavailable-id') {
-          const newCode = generateRoomCode();
-          logToast(`部屋番号が重複したため新番号【${newCode}】で再作成中…`);
-          setupPeerHost(newCode, myName);
-        } else {
-          logToast('通信エラー: ' + (err.type || '接続に失敗しました'), true);
+        try {
+          netState.peer.removeAllListeners();
+          netState.peer.destroy();
+        } catch (e) {
+          console.warn('Peer cleanup warn:', e);
         }
+        netState.peer = null;
+        setTimeout(callback, 200);
+      } else {
+        callback();
+      }
+    }
+
+    function setupPeerHost(roomDigits, myName) {
+      cleanupPeer(() => {
+        const cleanCode = String(roomDigits).replace(/[^0-9]/g, '') || generateRoomCode();
+        const targetPeerId = codeToPeerId(cleanCode);
+
+        netState.isOnline = true;
+        netState.isHost = true;
+        netState.mySlotId = 'A';
+        netState.roomCode = cleanCode;
+        netState.connections = {};
+
+        PLAYERS[0].name = `${myName} (ホスト)`;
+        PLAYERS[0].isAI = false;
+
+        const displayCode = document.getElementById('displayRoomCode');
+        if (displayCode) displayCode.textContent = cleanCode;
+
+        try {
+          netState.peer = new Peer(targetPeerId, {
+            debug: 0,
+            config: {
+              iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:global.stun.twilio.com:3478' }
+              ]
+            }
+          });
+        } catch (e) {
+          console.warn('Peer host creation failed:', e);
+          logToast('通信の初期化に失敗しました。再試行してください', true);
+          return;
+        }
+
+        netState.peer.on('open', (id) => {
+          netState.roomCode = cleanCode;
+          if (displayCode) displayCode.textContent = cleanCode;
+          logToast(`部屋番号【${cleanCode}】を作成しました！`);
+          updateLobbyUI();
+          updateNetworkStatusUI();
+        });
+
+        // ゲストからの接続を直接受け付け
+        netState.peer.on('connection', (conn) => {
+          netState.connections[conn.peer] = conn;
+
+          conn.on('data', (data) => {
+            handleHostReceivedData(conn, data);
+          });
+
+          conn.on('close', () => {
+            handlePlayerDisconnect(conn);
+          });
+
+          conn.on('error', (err) => {
+            console.warn('Host connection error:', err);
+          });
+
+          conn.on('open', () => {
+            netState.connections[conn.peer] = conn;
+          });
+        });
+
+        netState.peer.on('error', (err) => {
+          console.warn('Peer host error caught:', err ? err.type : err);
+          if (err && (err.type === 'unavailable-id' || err.type === 'server-error')) {
+            const newCode = generateRoomCode();
+            logToast(`部屋番号が重複または無効なため新番号【${newCode}】で再作成中…`);
+            setupPeerHost(newCode, myName);
+          } else {
+            logToast('通信待機中… (再接続中)', true);
+          }
+        });
       });
     }
 
     function setupPeerGuest(roomDigits, myName) {
-      if (netState.peer) {
-        try { netState.peer.destroy(); } catch (e) {}
-      }
+      cleanupPeer(() => {
+        const cleanCode = String(roomDigits).replace(/[^0-9]/g, '');
+        if (!cleanCode) {
+          logToast('有効な4桁の部屋番号を入力してください', true);
+          resetJoinButton();
+          return;
+        }
 
-      const cleanCode = String(roomDigits).replace(/[^0-9]/g, '');
-      if (!cleanCode) {
-        logToast('有効な4桁の部屋番号を入力してください', true);
-        resetJoinButton();
-        return;
-      }
+        // 画面を即座にロビー待機画面へ
+        document.getElementById('multiplayerActionSection').classList.add('hidden');
+        document.getElementById('multiplayerLobbySection').classList.remove('hidden');
+        document.getElementById('hostControlArea').classList.add('hidden');
+        document.getElementById('guestWaitMsg').classList.remove('hidden');
+        document.getElementById('displayRoomCode').textContent = cleanCode;
 
-      // 画面を即座にロビー待機画面へ
-      document.getElementById('multiplayerActionSection').classList.add('hidden');
-      document.getElementById('multiplayerLobbySection').classList.remove('hidden');
-      document.getElementById('hostControlArea').classList.add('hidden');
-      document.getElementById('guestWaitMsg').classList.remove('hidden');
-      document.getElementById('displayRoomCode').textContent = cleanCode;
+        netState.isOnline = true;
+        netState.isHost = false;
+        netState.roomCode = cleanCode;
 
-      netState.isOnline = true;
-      netState.isHost = false;
-      netState.roomCode = cleanCode;
+        logToast(`部屋【${cleanCode}】のホストへ接続中…`);
 
-      logToast(`部屋【${cleanCode}】のホストへ接続中…`);
+        try {
+          netState.peer = new Peer(null, {
+            debug: 0,
+            config: {
+              iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:global.stun.twilio.com:3478' }
+              ]
+            }
+          });
+        } catch (e) {
+          console.warn('Guest Peer init error:', e);
+          logToast('通信の初期化に失敗しました', true);
+          resetJoinButton();
+          return;
+        }
 
-      try {
-        netState.peer = new Peer(null, { debug: 1 });
-      } catch (e) {
-        console.error('Guest Peer init error:', e);
-        logToast('通信の初期化に失敗しました', true);
-        resetJoinButton();
-        return;
-      }
+        netState.peer.on('open', (myPeerId) => {
+          const targetHostId = codeToPeerId(cleanCode);
+          const conn = netState.peer.connect(targetHostId, { reliable: true });
+          netState.hostConn = conn;
 
-      netState.peer.on('open', (myPeerId) => {
-        const targetHostId = codeToPeerId(cleanCode);
-        const conn = netState.peer.connect(targetHostId, { reliable: true });
-        netState.hostConn = conn;
+          conn.on('data', (data) => {
+            handleGuestReceivedData(data);
+          });
 
-        conn.on('data', (data) => {
-          handleGuestReceivedData(data);
+          const sendJoin = () => {
+            if (conn.open) {
+              conn.send({
+                type: 'JOIN_REQUEST',
+                name: myName
+              });
+              logToast('ホストに接続しました！');
+            }
+          };
+
+          conn.on('open', () => {
+            sendJoin();
+          });
+
+          setTimeout(() => {
+            if (conn.open) sendJoin();
+          }, 600);
+
+          conn.on('close', () => {
+            logToast('ホストとの接続が切断されました', true);
+            disconnectToOffline();
+          });
+
+          conn.on('error', (err) => {
+            console.warn('Guest connection error:', err);
+            logToast('接続中にエラーが発生しました', true);
+          });
         });
 
-        const sendJoin = () => {
-          if (conn.open) {
-            conn.send({
-              type: 'JOIN_REQUEST',
-              name: myName
-            });
-            logToast('ホストに接続しました！');
-          }
-        };
-
-        conn.on('open', () => {
-          sendJoin();
+        netState.peer.on('error', (err) => {
+          console.warn('Peer guest error caught:', err ? err.type : err);
+          logToast(`部屋【${cleanCode}】が見つかりません。ホストが待機中か確認してください。`, true);
+          
+          document.getElementById('multiplayerLobbySection').classList.add('hidden');
+          document.getElementById('multiplayerActionSection').classList.remove('hidden');
+          resetJoinButton();
         });
-
-        setTimeout(() => {
-          if (conn.open) sendJoin();
-        }, 500);
-
-        conn.on('close', () => {
-          logToast('ホストとの接続が切断されました', true);
-          disconnectToOffline();
-        });
-
-        conn.on('error', (err) => {
-          console.warn('Guest connection error:', err);
-          logToast('接続中にエラーが発生しました', true);
-        });
-      });
-
-      netState.peer.on('error', (err) => {
-        console.error('Peer error:', err);
-        logToast(`部屋【${cleanCode}】が見つかりません。ホストが待機中か確認してください。`, true);
-        
-        document.getElementById('multiplayerLobbySection').classList.add('hidden');
-        document.getElementById('multiplayerActionSection').classList.remove('hidden');
-        resetJoinButton();
       });
     }
 
