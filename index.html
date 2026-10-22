@@ -383,7 +383,7 @@
             <button id="btnCopyInviteLink" class="mt-2 bg-indigo-800/90 hover:bg-indigo-700 text-indigo-100 text-xs font-bold px-3 py-1.5 rounded-lg border border-indigo-400 flex items-center justify-center gap-1.5 mx-auto transition">
               <i class="fa-solid fa-copy"></i> 招待用リンクをコピー
             </button>
-            <div id="copySuccessMsg" class="hidden text-[11px] text-emerald-400 font-bold mt-1">コピーしました！LINEやDiscordで友達に送ってください</div>
+            <div id="copySuccessMsg" class="hidden text-[11px] text-emerald-400 font-bold mt-1">コピーしました！友達に送信してください</div>
           </div>
 
           <div>
@@ -694,15 +694,6 @@
       peer: null,
       connections: {},
       hostConn: null
-    };
-
-    const PEER_CONFIG = {
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:global.stun.twilio.com:3478' }
-        ]
-      }
     };
 
     function copyTextToClipboard(text) {
@@ -1750,7 +1741,7 @@
       modal.classList.remove('hidden');
     }
 
-    // --- 4. オンライン通信処理（完全ゼロベース再構築） ---
+    // --- 4. オンライン通信処理（以前動作していたオリジナル構成） ---
     function setupPeerHost(myName) {
       if (netState.peer) {
         try { netState.peer.destroy(); } catch (e) {}
@@ -1771,8 +1762,8 @@
       document.getElementById('hostControlArea').classList.remove('hidden');
       document.getElementById('guestWaitMsg').classList.add('hidden');
 
-      // サーバー自動採番（エラー・重複・拒絶ゼロ）で Peer を作成
-      netState.peer = new Peer(null, { debug: 1, ...PEER_CONFIG });
+      // サーバー自動採番で Peer を作成
+      netState.peer = new Peer();
 
       netState.peer.on('open', (id) => {
         netState.roomCode = id;
@@ -1785,7 +1776,6 @@
       netState.peer.on('connection', (conn) => {
         netState.connections[conn.peer] = conn;
 
-        // 接続が来たら即座にデータ受信リスナーを登録
         conn.on('data', (data) => {
           handleHostReceivedData(conn, data);
         });
@@ -1815,7 +1805,7 @@
 
       netState.isOnline = true;
       netState.isHost = false;
-      netState.mySlotId = null; // 席はホストから割り振られるまで null
+      netState.mySlotId = null;
       netState.roomCode = targetCode;
 
       // ゲスト待機UIへ切り替え
@@ -1833,39 +1823,29 @@
 
       logToast(`ホスト【${targetCode}】へ接続中…`);
 
-      // ゲストはランダムIDで生成し、ホストへ直接 connect
-      netState.peer = new Peer(null, { debug: 1, ...PEER_CONFIG });
+      netState.peer = new Peer();
 
       netState.peer.on('open', () => {
         const conn = netState.peer.connect(targetCode, { reliable: true });
         netState.hostConn = conn;
 
+        conn.on('open', () => {
+          conn.send({
+            type: 'JOIN_REQUEST',
+            name: myName
+          });
+        });
+
         conn.on('data', (data) => {
           handleGuestReceivedData(data);
         });
 
-        // 確実な送信処理：ホストから返信（mySlotId）が届くまで500ms毎にノックし続ける
-        const sendJoin = () => {
-          if (netState.mySlotId) {
-            clearInterval(knockInterval);
-            return;
-          }
-          if (conn.open) {
-            conn.send({ type: 'JOIN_REQUEST', name: myName });
-          }
-        };
-
-        conn.on('open', sendJoin);
-        const knockInterval = setInterval(sendJoin, 500);
-
         conn.on('close', () => {
-          clearInterval(knockInterval);
           logToast('ホストとの接続が切断されました', true);
           disconnectToOffline();
         });
 
         conn.on('error', (err) => {
-          clearInterval(knockInterval);
           console.error('Guest connection error:', err);
           logToast('接続エラーが発生しました', true);
         });
@@ -2091,6 +2071,7 @@
       if (netState.peer) {
         try { netState.peer.destroy(); } catch (e) {}
       }
+
       netState.isOnline = false;
       netState.isHost = true;
       netState.mySlotId = 'A';
@@ -2387,7 +2368,7 @@
     const btnRulesOk = document.getElementById('btnRulesOk');
     if (btnRulesOk) btnRulesOk.addEventListener('click', () => modalRules.classList.add('hidden'));
 
-    // 招待URL処理（フライング接続の不具合を解消し、自動的に正しくゲスト接続を起動）
+    // 招待URL処理（フライング接続をせず、入力欄にコードを入れて参加ボタンを押す以前の形式）
     window.addEventListener('load', () => {
       try {
         updateSoundUI();
@@ -2399,10 +2380,7 @@
           screenTitle.classList.add('hidden');
           document.getElementById('inputRoomCode').value = roomFromUrl;
           document.getElementById('modalMultiplayer').classList.remove('hidden');
-
-          const myName = inputPlayerName ? (inputPlayerName.value.trim() || 'ゲスト') : 'ゲスト';
-          setupPeerGuest(roomFromUrl, myName);
-          logToast(`招待コードを受け取りました。ホストへ接続しています…`);
+          logToast(`招待リンクを受け取りました。「参加」を押して入室してください`);
         } else {
           screenTitle.classList.remove('hidden');
         }
