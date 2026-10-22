@@ -2070,6 +2070,12 @@
           return;
         }
 
+        // ゲスト参加時はまだ席が決まっていないためスロットをnullにする（A枠をホストから奪わない）
+        netState.isOnline = true;
+        netState.isHost = false;
+        netState.mySlotId = null;
+        netState.roomCode = targetRoomCode;
+
         // 画面を即座にロビー待機画面へ
         document.getElementById('multiplayerActionSection').classList.add('hidden');
         document.getElementById('multiplayerLobbySection').classList.remove('hidden');
@@ -2077,9 +2083,10 @@
         document.getElementById('guestWaitMsg').classList.remove('hidden');
         document.getElementById('displayRoomCode').textContent = targetRoomCode;
 
-        netState.isOnline = true;
-        netState.isHost = false;
-        netState.roomCode = targetRoomCode;
+        // 待機中は枠Aを「ホスト」として表示し、自分はB〜Dの承認待ちにする
+        PLAYERS[0].name = 'ホスト';
+        PLAYERS[0].isAI = false;
+        updateLobbyUI();
 
         logToast(`部屋【${targetRoomCode}】へ接続中…`);
 
@@ -2173,16 +2180,22 @@
 
     function handleHostReceivedData(conn, data) {
       if (data.type === 'JOIN_REQUEST') {
-        const availableSlots = PLAYERS.filter(p => p.id !== 'A' && p.isAI);
-        if (availableSlots.length === 0) {
-          conn.send({ type: 'JOIN_REJECT', message: '満員です' });
-          return;
+        // すでに接続済みの同じPeerIDなら再承認を送って終了
+        let assignedSlot = PLAYERS.find(p => p.peerId === conn.peer);
+
+        if (!assignedSlot) {
+          const availableSlots = PLAYERS.filter(p => p.id !== 'A' && p.isAI);
+          if (availableSlots.length === 0) {
+            conn.send({ type: 'JOIN_REJECT', message: '満員です' });
+            return;
+          }
+          assignedSlot = availableSlots[0]; // 最初の空きスロット（Bさん）
+          assignedSlot.isAI = false;
+          assignedSlot.name = data.name;
+          assignedSlot.peerId = conn.peer;
+          netState.connections[conn.peer] = conn;
+          logToast(`${data.name} さんが参加しました！`);
         }
-        const assignedSlot = availableSlots[0];
-        assignedSlot.isAI = false;
-        assignedSlot.name = data.name;
-        assignedSlot.peerId = conn.peer;
-        netState.connections[conn.peer] = conn;
 
         conn.send({
           type: 'JOIN_ACCEPT',
@@ -2190,7 +2203,6 @@
           players: PLAYERS
         });
 
-        logToast(`${data.name} さんが参加しました！`);
         updateLobbyUI();
         broadcastLobbyMembers();
       }
@@ -2258,13 +2270,18 @@
 
     function handleGuestReceivedData(data) {
       if (data.type === 'JOIN_ACCEPT') {
-        netState.mySlotId = data.slotId;
+        netState.mySlotId = data.slotId; // Bスロット（またはC, D）が割り当てられる
         data.players.forEach((p, idx) => {
           PLAYERS[idx].name = p.name;
           PLAYERS[idx].isAI = p.isAI;
         });
+        document.getElementById('guestWaitMsg').innerHTML = `
+          <i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> 【${data.slotId}席】に参加完了！ホストのゲーム開始を待っています…
+        `;
+        document.getElementById('guestWaitMsg').className = 'text-center text-xs text-emerald-300 font-bold p-3 bg-emerald-950/40 rounded-xl border border-emerald-500/30';
         updateLobbyUI();
         updateNetworkStatusUI();
+        logToast(`部屋に参加しました！あなたの席は【${data.slotId}さん】です`);
       }
 
       if (data.type === 'LOBBY_UPDATE') {
@@ -2327,15 +2344,16 @@
       let humanCount = 0;
       PLAYERS.forEach(p => {
         if (!p.isAI) humanCount++;
-        const isMe = (p.id === netState.mySlotId);
+        // mySlotIdが決まっている時だけ「(あなた)」を付与
+        const isMe = (netState.mySlotId && p.id === netState.mySlotId);
         const item = document.createElement('div');
         item.className = `flex items-center justify-between p-2.5 rounded-xl border ${
-          isMe ? 'bg-indigo-950/70 border-indigo-400' : 'bg-gray-800/60 border-gray-700'
+          isMe ? 'bg-indigo-950/70 border-indigo-400 shadow-md' : 'bg-gray-800/60 border-gray-700'
         }`;
         item.innerHTML = `
           <div class="flex items-center gap-2">
             <span class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs text-white ${p.colorBg}">${p.id}</span>
-            <span class="text-xs font-bold text-white">${p.name} ${isMe ? '(あなた)' : ''}</span>
+            <span class="text-xs font-bold text-white">${p.name} ${isMe ? '<span class="text-amber-300 font-black">(あなた)</span>' : ''}</span>
           </div>
           <span class="text-[10px] px-2 py-0.5 rounded font-black ${
             p.isAI ? 'bg-gray-700 text-gray-300' : 'bg-emerald-600 text-white'
