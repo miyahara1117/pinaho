@@ -70,7 +70,7 @@
 </head>
 <body class="bg-gray-950 text-white min-h-screen flex flex-col justify-between overflow-hidden">
 
-  <!-- ==================== スタート画面（蓋絵 / モード選択） ==================== -->
+  <!-- ==================== スタート画面（タイトル・モード選択） ==================== -->
   <div id="screenTitle" class="fixed inset-0 z-50 flex flex-col justify-between p-4 sm:p-6 bg-gray-950 select-none overflow-y-auto" style="background: radial-gradient(circle at center, #062b14 0%, #03140a 60%, #020604 100%);">
     
     <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-5 flex flex-wrap items-center justify-around text-7xl text-emerald-400">
@@ -80,7 +80,7 @@
       <i class="fa-solid fa-club m-6"></i>
     </div>
 
-    <!-- スタート画面専用ヘッダー -->
+    <!-- スタート画面ヘッダー -->
     <div class="w-full flex justify-between items-center z-10 py-1">
       <div class="flex items-center gap-1.5 text-xs text-amber-400 font-black tracking-wider bg-black/50 px-3 py-1.5 rounded-full border border-amber-500/30">
         <i class="fa-solid fa-crown text-amber-400"></i>
@@ -93,7 +93,7 @@
       </button>
     </div>
 
-    <!-- メインコンテンツ -->
+    <!-- メインロゴ・プレイヤー名・ボタン -->
     <div class="flex flex-col items-center text-center my-auto z-10 py-2 w-full max-w-sm sm:max-w-md mx-auto">
       
       <!-- タイトルロゴ画像 -->
@@ -127,7 +127,6 @@
           <i class="fa-solid fa-dice text-lg text-amber-300 group-hover:rotate-12 transition-transform"></i>
         </button>
 
-        <!-- オンラインマルチ -->
         <button id="btnTitleMulti" class="group relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-500 hover:to-purple-500 text-white font-black py-3 px-5 rounded-2xl shadow-xl shadow-indigo-950/60 border-2 border-indigo-300/80 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-between">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-xl bg-black/30 flex items-center justify-center text-base text-indigo-200">
@@ -141,14 +140,12 @@
           <i class="fa-solid fa-arrow-right text-sm text-amber-300 group-hover:translate-x-1 transition-transform"></i>
         </button>
 
-        <!-- ルール確認ボタン -->
         <button id="btnTitleRules" class="bg-gray-900/80 hover:bg-gray-800 text-gray-300 hover:text-white text-xs font-bold py-2 px-3 rounded-xl border border-gray-700 transition flex items-center justify-center gap-1.5 mt-0.5">
           <i class="fa-solid fa-circle-question text-emerald-400"></i> ゲームのルールを見る
         </button>
       </div>
     </div>
 
-    <!-- フッター注記 -->
     <div class="text-[10px] text-gray-400 text-center z-10 pb-1">
       手札合計ロン / ツモ上がり / スキップ・リバース・ドロー2・強制オープン
     </div>
@@ -165,7 +162,6 @@
         <i class="fa-solid fa-cards"></i> <span>ピナホ</span>
       </div>
       
-      <!-- ルーム状態バッジ -->
       <div id="roomStatusBadge" class="text-xs bg-gray-900/90 border border-gray-700 px-2 sm:px-3 py-1 rounded-lg flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-yellow-400" id="networkDot"></span>
         <span id="roomModeText" class="font-bold text-gray-200">オフライン (AI戦)</span>
@@ -183,7 +179,6 @@
       </div>
     </div>
 
-    <!-- ヘッダー右側ボタン -->
     <div class="flex items-center gap-1.5 sm:gap-2">
       <button id="btnMultiplayerMenu" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-2.5 py-1.5 rounded-lg border border-indigo-400 shadow transition flex items-center gap-1 font-bold">
         <i class="fa-solid fa-users"></i> オンライン
@@ -348,7 +343,7 @@
             class="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white font-bold focus:border-indigo-500 focus:outline-none" />
         </div>
 
-        <!-- アクションセクション（部屋作成 / 部屋番号参加） -->
+        <!-- 1. 入力・選択画面（初期表示） -->
         <div id="multiplayerActionSection" class="space-y-4">
           <div class="bg-indigo-950/40 border border-indigo-800/60 rounded-2xl p-4">
             <h4 class="text-sm font-black text-indigo-300 mb-1 flex items-center gap-1.5">
@@ -382,7 +377,7 @@
           </div>
         </div>
 
-        <!-- ロビーセクション（待機画面） -->
+        <!-- 2. ロビー待機画面（最初は hidden で絶対に隠す） -->
         <div id="multiplayerLobbySection" class="hidden space-y-4">
           <div class="bg-indigo-950/60 border-2 border-indigo-500/80 rounded-2xl p-4 text-center">
             <span class="text-[11px] text-indigo-300 font-bold uppercase tracking-wider">部屋コード</span>
@@ -402,12 +397,15 @@
             <div id="lobbyMemberList" class="space-y-2"></div>
           </div>
 
+          <!-- ホスト用ボタン -->
           <div id="hostControlArea" class="pt-2">
             <button id="btnStartGameOnline" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black py-3 rounded-xl shadow-lg border border-emerald-400 text-sm transition">
               このメンバーでゲーム開始！
             </button>
             <p class="text-[10px] text-gray-400 text-center mt-1">※空きスロットは自動的にAIが参加します</p>
           </div>
+          
+          <!-- ゲスト用待機メッセージ -->
           <div id="guestWaitMsg" class="hidden text-center text-xs text-amber-300 animate-pulse font-bold p-3 bg-amber-950/40 rounded-xl border border-amber-500/30">
             <i class="fa-solid fa-spinner fa-spin mr-1"></i> ホストと接続中… ゲーム開始を待機しています
           </div>
@@ -614,9 +612,7 @@
     let soundEnabled = true;
     try {
       const savedSound = localStorage.getItem('pinaho_sound_enabled');
-      if (savedSound !== null) {
-        soundEnabled = (savedSound === 'true');
-      }
+      if (savedSound !== null) soundEnabled = (savedSound === 'true');
     } catch (e) {}
 
     let synth = null;
@@ -642,12 +638,12 @@
       if (titleIcon && titleText) {
         if (soundEnabled) {
           titleIcon.className = 'fa-solid fa-volume-high text-amber-300';
-          titleText.textContent = 'サウンドON';
-          titleText.className = 'text-[11px] font-bold text-gray-200';
+          titleText.textContent = 'サウンド ON';
+          titleText.className = 'text-xs font-black';
         } else {
           titleIcon.className = 'fa-solid fa-volume-xmark text-rose-400';
           titleText.textContent = '消音中 (OFF)';
-          titleText.className = 'text-[11px] font-bold text-rose-400';
+          titleText.className = 'text-xs font-black text-rose-400';
         }
       }
     }
@@ -1779,7 +1775,7 @@
       modal.classList.remove('hidden');
     }
 
-    // --- 4. オンライン通信処理（以前成功していた素直で確実なPeerJS実装） ---
+    // --- 4. オンライン通信処理（完全ゼロベース再構築） ---
     function setupPeerHost(myName) {
       if (netState.peer) {
         try { netState.peer.destroy(); } catch (e) {}
@@ -1805,6 +1801,7 @@
       updateLobbyUI();
       updateNetworkStatusUI();
 
+      // 指定した部屋コードで Peer インスタンスを開設
       netState.peer = new Peer(roomCode, { debug: 1 });
 
       netState.peer.on('open', (id) => {
@@ -1843,7 +1840,7 @@
 
       netState.isOnline = true;
       netState.isHost = false;
-      netState.mySlotId = null;
+      netState.mySlotId = null; // 席はホストから割り振られるまで null
       netState.roomCode = targetCode;
 
       // ゲスト待機UIへ切り替え
@@ -1861,7 +1858,7 @@
 
       logToast(`部屋【${targetCode}】へ接続中…`);
 
-      // ゲストは自動割り当てIDでPeerインスタンスを作成
+      // ゲストはランダムIDで生成し、ホストへ直接 connect
       netState.peer = new Peer(null, { debug: 1 });
 
       netState.peer.on('open', () => {
@@ -2205,11 +2202,13 @@
       document.getElementById('modalMultiplayer').classList.add('hidden');
     });
 
+    // ホスト部屋作成ボタン
     document.getElementById('btnCreateRoom').addEventListener('click', () => {
       const name = document.getElementById('inputPlayerName').value.trim() || 'ホスト';
       setupPeerHost(name);
     });
 
+    // ゲスト参加ボタン
     document.getElementById('btnJoinRoom').addEventListener('click', () => {
       const name = document.getElementById('inputPlayerName').value.trim() || 'ゲスト';
       const code = document.getElementById('inputRoomCode').value.trim();
