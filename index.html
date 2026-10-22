@@ -2027,15 +2027,21 @@
 
         // ゲスト接続の受け付け
         netState.peer.on('connection', (conn) => {
-          netState.connections[conn.peer] = conn;
+          const registerConn = () => {
+            netState.connections[conn.peer] = conn;
+            conn.on('data', (data) => {
+              handleHostReceivedData(conn, data);
+            });
+            conn.on('close', () => {
+              handlePlayerDisconnect(conn);
+            });
+          };
 
-          conn.on('data', (data) => {
-            handleHostReceivedData(conn, data);
-          });
-
-          conn.on('close', () => {
-            handlePlayerDisconnect(conn);
-          });
+          if (conn.open) {
+            registerConn();
+          } else {
+            conn.on('open', registerConn);
+          }
 
           conn.on('error', (err) => {
             console.warn('Host connection error:', err);
@@ -2095,45 +2101,57 @@
           return;
         }
 
+        let joinInterval = null;
+
         netState.peer.on('open', (myPeerId) => {
           const conn = netState.peer.connect(targetRoomCode, { reliable: true });
           netState.hostConn = conn;
 
           conn.on('data', (data) => {
+            if (data.type === 'JOIN_ACCEPT') {
+              if (joinInterval) {
+                clearInterval(joinInterval);
+                joinInterval = null;
+              }
+            }
             handleGuestReceivedData(data);
           });
 
-          const sendJoin = () => {
-            if (conn.open) {
+          const trySendJoin = () => {
+            if (conn && conn.open) {
               conn.send({
                 type: 'JOIN_REQUEST',
                 name: myName
               });
-              logToast('ホストに接続しました！');
             }
           };
 
           conn.on('open', () => {
-            sendJoin();
+            trySendJoin();
+            // ホストからJOIN_ACCEPTが届くまで800msごとにノックを継続（メッセージ消失防止）
+            if (!joinInterval) {
+              joinInterval = setInterval(trySendJoin, 800);
+            }
           });
 
-          // ハンドシェイク保証（即時完了時のイベント拾い漏れ防止）
-          setTimeout(() => {
-            if (conn.open) sendJoin();
-          }, 400);
+          // 接続確立が即座に完了していた場合のバックアップ呼び出し
+          setTimeout(trySendJoin, 400);
 
           conn.on('close', () => {
+            if (joinInterval) clearInterval(joinInterval);
             logToast('ホストとの接続が切断されました', true);
             disconnectToOffline();
           });
 
           conn.on('error', (err) => {
+            if (joinInterval) clearInterval(joinInterval);
             console.warn('Guest connection error:', err);
             logToast('ホストへの接続中にエラーが発生しました', true);
           });
         });
 
         netState.peer.on('error', (err) => {
+          if (joinInterval) clearInterval(joinInterval);
           console.warn('Peer guest error caught:', err ? err.type : err);
           logToast(`部屋【${targetRoomCode}】が見つかりません。ホストが待機中か確認してください。`, true);
           
