@@ -1762,7 +1762,7 @@
       document.getElementById('hostControlArea').classList.remove('hidden');
       document.getElementById('guestWaitMsg').classList.add('hidden');
 
-      // サーバー自動採番で Peer を作成
+      // サーバー自動採番（エラー・重複・拒絶ゼロ）で Peer を作成
       netState.peer = new Peer(null, { debug: 1 });
 
       netState.peer.on('open', (id) => {
@@ -1776,6 +1776,7 @@
       netState.peer.on('connection', (conn) => {
         netState.connections[conn.peer] = conn;
 
+        // 接続が来たら即座にデータ受信リスナーを登録
         conn.on('data', (data) => {
           handleHostReceivedData(conn, data);
         });
