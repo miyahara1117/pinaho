@@ -896,7 +896,7 @@
       return 'bottom';
     }
 
-    // --- 4. 確実につながるPeerJS通信処理（Google STUN適用） ---
+// --- 4. 確実につながるPeerJS通信処理（Google STUN適用） ---
     function initHostPeer(myName) {
       if (netState.peer) netState.peer.destroy();
       netState.isOnline = true;
@@ -904,7 +904,7 @@
       netState.mySlotId = 'A';
       netState.connections = {};
 
-      PLAYERS[0].name = `${myName} (あなた)`;
+      PLAYERS[0].name = myName || 'マスター';
       PLAYERS[0].isAI = false;
 
       document.getElementById('displayRoomCode').textContent = '発行中...';
@@ -1193,20 +1193,34 @@
       PLAYERS.forEach(p => {
         if (!p.isAI) humanCount++;
         const isMe = (netState.mySlotId && p.id === netState.mySlotId);
+        const isMaster = (p.id === 'A');
+
+        // 名前の末尾に付いてしまっている余分な「(あなた)」を除去してクリーンに表示
+        let cleanName = p.name.replace(/\s*\(あなた\)/g, '').trim();
+
         const item = document.createElement('div');
         item.className = `flex items-center justify-between p-2.5 rounded-xl border ${
-          isMe ? 'bg-indigo-950/70 border-indigo-400 shadow-md' : 'bg-gray-800/60 border-gray-700'
+          isMe ? 'bg-indigo-950/70 border-indigo-400 shadow-md ring-1 ring-indigo-400/50' : 'bg-gray-800/60 border-gray-700'
         }`;
+
+        let roleBadge = '';
+        if (p.isAI) {
+          roleBadge = `<span class="text-[10px] px-2 py-0.5 rounded font-black bg-gray-700 text-gray-300">AI BOT</span>`;
+        } else if (isMaster) {
+          roleBadge = `<span class="text-[10px] px-2 py-0.5 rounded font-black bg-gradient-to-r from-amber-500 to-yellow-600 text-black flex items-center gap-1 shadow-sm"><i class="fa-solid fa-crown text-[9px]"></i> マスター</span>`;
+        } else {
+          roleBadge = `<span class="text-[10px] px-2 py-0.5 rounded font-black bg-emerald-600 text-white">ONLINE</span>`;
+        }
+
         item.innerHTML = `
           <div class="flex items-center gap-2">
             <span class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs text-white ${p.colorBg}">${p.id}</span>
-            <span class="text-xs font-bold text-white">${p.name} ${isMe ? '<span class="text-amber-300 font-black">(あなた)</span>' : ''}</span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-white">${cleanName}</span>
+              ${isMe ? '<span class="text-[11px] text-amber-300 font-black bg-amber-950/60 border border-amber-500/40 px-1.5 py-0.2 rounded">(あなた)</span>' : ''}
+            </div>
           </div>
-          <span class="text-[10px] px-2 py-0.5 rounded font-black ${
-            p.isAI ? 'bg-gray-700 text-gray-300' : 'bg-emerald-600 text-white'
-          }">
-            ${p.isAI ? 'AI BOT' : 'ONLINE'}
-          </span>
+          ${roleBadge}
         `;
         container.appendChild(item);
       });
