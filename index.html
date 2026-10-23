@@ -516,13 +516,39 @@
       </div>
       
       <div class="overflow-y-auto pr-2 space-y-4 text-xs text-gray-300 mt-3 leading-relaxed">
+        <div class="bg-amber-950/40 border border-amber-500/40 rounded-xl p-3">
+          <h4 class="font-black text-amber-300 text-sm mb-1.5 flex items-center gap-1.5">
+            <i class="fa-solid fa-crown text-amber-400"></i> 上がり条件（勝利条件）
+          </h4>
+          <div class="space-y-2">
+            <div>
+              <span class="inline-block bg-rose-600 text-white font-bold px-2 py-0.5 rounded text-[11px] mr-1">ロン上がり</span>
+              <p class="mt-0.5 text-gray-200">
+                <strong>他のプレイヤーが場に出したカードの数字</strong>と、自分の<strong>手持ちカードの合計の数字が一致</strong>したとき、「ロン上がり」を宣言して即勝利となります！
+              </p>
+            </div>
+            <div>
+              <span class="inline-block bg-amber-500 text-black font-black px-2 py-0.5 rounded text-[11px] mr-1">ツモ上がり</span>
+              <p class="mt-0.5 text-gray-200">
+                手札が<strong>残り1枚</strong>のとき、自分の手番開始時に山札から引いたカードの数字が<strong>持っている1枚と同じ数字</strong>なら「ツモ上がり」で勝利となります！
+              </p>
+            </div>
+            <div class="border-t border-amber-500/30 pt-1.5">
+              <span class="inline-block bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black px-2 py-0.5 rounded text-[11px] mr-1">天和（テンホー / 特殊上がり）</span>
+              <p class="mt-0.5 text-amber-200 font-bold">
+                ゲーム開始時、<strong>最初に配られた手札4枚の合計数字</strong>と、<strong>最初に場に出たカードの数字が一致</strong>していた場合、誰の手番も待たずに即座に「天和」となり大勝利となります！
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div>
           <h4 class="font-bold text-amber-300 text-sm mb-1">🎴 基本の流れ</h4>
           <p>4人対戦、初期手札は4枚。時計回り（初期）で進みます。場の一番上のカードと「同じマーク」または「同じ数字」のカードを出せます。同じ数字なら複数枚同時に出してもOKです。</p>
           <p class="text-amber-200 mt-1">※<strong>同じ数字を複数枚出す場合</strong>：場のマークと同じカードが下になり、違うマークのカードが一番上に重なります。次の人はその<strong>一番上のマーク</strong>を引き継いでプレイを続けます。</p>
-          <p class="text-amber-200 mt-1">※手札が残り1枚のときは、自分の手番開始時に<strong>必ず山札から1枚引きます</strong>。引いたカードが持っている1枚と同じ数字なら<strong>ツモ上がり</strong>！ツモれなくても、場に出せるカードがあれば出してOKです。</p>
-          <p class="text-amber-200 mt-1">※<strong>山札を引いた後のパス</strong>：山札からカードを引いた後、出せるカードがない場合や温存したい場合は「パスして終了」で手番を次に回せます。（1ターンに引ける山札は1枚まで）</p>
-          <p class="text-emerald-300 mt-1">※<strong>数字の計算</strong>：<strong>全カード数字そのまま</strong>（A=1, 2〜10, J=11, Q=12, K=13）。場にK(13)が出た時、手札が10と3（合計13）ならロン上がりできます！</p>
+          <p class="text-amber-200 mt-1">※<strong>手札残り1枚のとき</strong>：手番開始時に<strong>必ず山札から1枚引きます</strong>。ツモれなくても、場に出せるカードがあれば出してOKです。</p>
+          <p class="text-amber-200 mt-1">※<strong>山札を引いた後のパス</strong>：山札からカードを引いた後、出せるカードがない場合や温存したい場合は「パス」で手番を次に回せます。（1ターンに引ける山札は1枚まで）</p>
+          <p class="text-emerald-300 mt-1">※<strong>数字の計算</strong>：<strong>全カード数字そのまま</strong>（A=1, 2〜10, J=11, Q=12, K=13）。場にK(13)が出た時、手札が10と3（合計13）ならロンできます！</p>
         </div>
 
         <div>
