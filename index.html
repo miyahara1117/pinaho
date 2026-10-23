@@ -638,10 +638,16 @@
     } catch (e) {}
 
     let synth = null;
+    let membraneSynth = null;
+
     function initAudio() {
       if (!synth && typeof Tone !== 'undefined') {
         synth = new Tone.PolySynth(Tone.Synth).toDestination();
         synth.volume.value = -8;
+      }
+      if (!membraneSynth && typeof Tone !== 'undefined') {
+        membraneSynth = new Tone.MembraneSynth().toDestination();
+        membraneSynth.volume.value = -6;
       }
     }
 
@@ -685,13 +691,43 @@
         if (Tone.context.state !== 'running') Tone.context.resume();
         const now = Tone.now();
         switch(type) {
-          case 'card': synth.triggerAttackRelease(["C5"], "32n", now); break;
-          case 'draw': synth.triggerAttackRelease(["G4", "C5"], "16n", now); break;
-          case 'special': synth.triggerAttackRelease(["E5", "B5"], "16n", now); break;
-          case 'dice': synth.triggerAttackRelease(["G4", "B4", "D5"], "32n", now); break;
-          case 'ron': synth.triggerAttackRelease(["C4", "G4", "C5", "E5", "G5"], "4n", now); break;
-          case 'win': synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n", now); break;
-          case 'warn': synth.triggerAttackRelease(["F3", "Db3"], "8n", now); break;
+          case 'card': 
+            if (membraneSynth) membraneSynth.triggerAttackRelease("C2", "32n", now);
+            else synth.triggerAttackRelease(["C5"], "32n", now);
+            break;
+          case 'draw': 
+            synth.triggerAttackRelease(["G4", "C5"], "16n", now); 
+            break;
+          case 'special': 
+            synth.triggerAttackRelease(["E5", "B5"], "16n", now); 
+            break;
+          case 'skip':
+            synth.triggerAttackRelease(["E5", "G#5", "B5"], "16n", now);
+            break;
+          case 'reverse':
+            synth.triggerAttackRelease(["A5", "E5", "C5"], "16n", now);
+            break;
+          case 'draw2':
+            synth.triggerAttackRelease(["C4", "C3"], "8n", now);
+            break;
+          case 'color':
+            synth.triggerAttackRelease(["C5", "E5", "G5", "B5"], "16n", now);
+            break;
+          case 'king':
+            synth.triggerAttackRelease(["G4", "C5", "E5", "G5"], "8n", now);
+            break;
+          case 'dice': 
+            synth.triggerAttackRelease(["G4", "B4", "D5"], "32n", now); 
+            break;
+          case 'ron': 
+            synth.triggerAttackRelease(["C4", "G4", "C5", "E5", "G5"], "4n", now); 
+            break;
+          case 'win': 
+            synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n", now); 
+            break;
+          case 'warn': 
+            synth.triggerAttackRelease(["F3", "Db3"], "8n", now); 
+            break;
         }
       } catch (e) {}
     }
@@ -711,7 +747,17 @@
       kRevealedStatus: { A: false, B: false, C: false, D: false }
     };
 
-    // 成功した通信アーキテクチャ
+    // 成功したPeerJS通信設定（Google STUNサーバー組み込み）
+    const PEER_CONFIG = {
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' }
+        ]
+      }
+    };
+
     const netState = {
       isOnline: false,
       isHost: true,
@@ -850,7 +896,7 @@
       return 'bottom';
     }
 
-    // --- 4. 確実につながるPeerJS通信処理（直前に認識成功したコードそのまま） ---
+    // --- 4. 確実につながるPeerJS通信処理（Google STUN適用） ---
     function initHostPeer(myName) {
       if (netState.peer) netState.peer.destroy();
       netState.isOnline = true;
@@ -867,7 +913,7 @@
       document.getElementById('hostControlArea').classList.remove('hidden');
       document.getElementById('guestWaitMsg').classList.add('hidden');
 
-      netState.peer = new Peer();
+      netState.peer = new Peer(PEER_CONFIG);
 
       netState.peer.on('open', (id) => {
         netState.roomCode = id;
@@ -879,7 +925,6 @@
 
       netState.peer.on('connection', (conn) => {
         conn.on('open', () => {
-          // 空いているスロット（B, C, D）を探して割り振る
           const availableSlot = ['B', 'C', 'D'].find(s => PLAYERS.find(p => p.id === s).isAI);
           if (!availableSlot) {
             conn.send({ type: 'REJECT', msg: '満員です' });
@@ -938,10 +983,10 @@
       document.getElementById('hostControlArea').classList.add('hidden');
       document.getElementById('guestWaitMsg').classList.remove('hidden');
 
-      netState.peer = new Peer();
+      netState.peer = new Peer(PEER_CONFIG);
 
       netState.peer.on('open', () => {
-        netState.hostConn = netState.peer.connect(targetCode);
+        netState.hostConn = netState.peer.connect(targetCode, { reliable: true });
 
         netState.hostConn.on('open', () => {
           logToast('ホストに接続しました！');
@@ -1662,7 +1707,7 @@
 
       const aCount = playedCards.filter(c => c.rank === 1).length;
       if (aCount > 0) {
-        playSound('special');
+        playSound('skip');
         skipSteps = aCount + 1;
         logToast(`[A スキップ発動] 次のプレイヤーを飛ばします！`);
       }
@@ -1670,7 +1715,7 @@
       const nineCount = playedCards.filter(c => c.rank === 9).length;
       if (nineCount % 2 === 1) {
         state.direction *= -1;
-        playSound('special');
+        playSound('reverse');
         logToast(`[9 リバース発動] 回り順が逆転しました！`);
       }
 
@@ -1680,13 +1725,13 @@
       }
       if (drawCount > 0) {
         state.drawStack += drawCount;
-        playSound('special');
+        playSound('draw2');
         logToast(`[ドロー2効果！] ドロー累積が +${state.drawStack} 枚になりました！`);
       }
 
       const kCount = playedCards.filter(c => c.rank === 13).length;
       if (kCount > 0) {
-        playSound('special');
+        playSound('king');
         const victimIndex = getNextPlayerIndex(skipSteps);
         const victim = PLAYERS[victimIndex];
         state.kRevealedStatus[victim.id] = true;
@@ -1698,6 +1743,7 @@
 
       const hasColorChanger = playedCards.some(c => c.rank === 8 || c.isJoker);
       if (hasColorChanger) {
+        playSound('color');
         const isHumanTurn = (!player.isAI && player.id === netState.mySlotId);
         if (isHumanTurn) {
           showColorModal(() => {
