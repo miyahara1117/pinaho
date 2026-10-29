@@ -66,6 +66,12 @@
     }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* スマホ画面向けのレイアウト保護 */
+    @media (max-width: 640px) {
+      .seat-side { width: 72px; }
+      .card-hand-responsive { transform: scale(0.9); transform-origin: bottom center; }
+    }
   </style>
 </head>
 <body class="bg-gray-950 text-white min-h-screen flex flex-col justify-between overflow-hidden">
@@ -210,113 +216,112 @@
     </div>
 
     <!-- MIDDLE ROW: LEFT席, 中央テーブル, RIGHT席 -->
-    <div class="w-full flex items-center justify-between px-2 sm:px-8 my-auto relative">
+    <div class="w-full flex items-center justify-between px-1 sm:px-8 my-auto relative max-w-5xl mx-auto">
       <!-- LEFT 席 -->
-      <div class="flex flex-col items-center z-10 w-24 sm:w-36">
-        <div id="seat-left" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-emerald-700/50 text-xs transition duration-300">
-          <div id="avatar-left" class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center font-bold text-[11px] text-white">B</div>
+      <div class="flex flex-col items-center z-10 w-20 sm:w-36 seat-side">
+        <div id="seat-left" class="flex items-center gap-1 px-2 sm:px-3 py-1 rounded-full bg-black/60 border border-emerald-700/50 text-[11px] sm:text-xs transition duration-300">
+          <div id="avatar-left" class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-600 flex items-center justify-center font-bold text-[10px] sm:text-[11px] text-white">B</div>
           <div class="flex flex-col leading-tight">
-            <div class="flex items-center gap-1">
-              <span id="name-left" class="font-bold">Bさん</span>
-              <span id="badge-human-left" class="hidden text-[9px] bg-blue-600 px-1 rounded font-bold">人</span>
+            <div class="flex items-center gap-0.5">
+              <span id="name-left" class="font-bold truncate max-w-[45px] sm:max-w-none">Bさん</span>
+              <span id="badge-human-left" class="hidden text-[8px] bg-blue-600 px-1 rounded font-bold">人</span>
             </div>
-            <span class="text-amber-300 text-[10px] font-bold"><span id="handCount-left">4</span>枚</span>
+            <span class="text-amber-300 text-[9px] sm:text-[10px] font-bold"><span id="handCount-left">4</span>枚</span>
           </div>
         </div>
-        <span id="badge-revealed-left" class="hidden text-[10px] bg-rose-600 text-white px-1.5 py-0.2 rounded font-bold mt-1">全公開中</span>
-        <div id="hand-left" class="flex flex-col -space-y-10 mt-2 transition-all min-h-[60px]"></div>
+        <span id="badge-revealed-left" class="hidden text-[9px] bg-rose-600 text-white px-1 py-0.2 rounded font-bold mt-0.5">全公開中</span>
+        <div id="hand-left" class="flex flex-col -space-y-12 sm:-space-y-10 mt-1 transition-all min-h-[50px] scale-90 sm:scale-100"></div>
       </div>
 
       <!-- CENTER FIELD -->
-      <div class="flex flex-col items-center justify-center relative">
-        <div id="currentColorIndicator" class="mb-2 px-3 py-0.5 rounded-full text-xs font-black flex items-center gap-1.5 shadow-md border transition-all duration-300 bg-neutral-900 border-neutral-700 text-white">
-          <span class="w-2.5 h-2.5 rounded-full inline-block bg-white" id="colorDot"></span>
+      <div class="flex flex-col items-center justify-center relative flex-1">
+        <div id="currentColorIndicator" class="mb-1 sm:mb-2 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-black flex items-center gap-1 shadow-md border transition-all duration-300 bg-neutral-900 border-neutral-700 text-white">
+          <span class="w-2 h-2 rounded-full inline-block bg-white" id="colorDot"></span>
           <span id="colorName">指定なし</span>
         </div>
 
-        <div class="flex items-center gap-4 sm:gap-8">
+        <div class="flex items-center gap-2 sm:gap-8">
           <!-- 山札 -->
           <div class="flex flex-col items-center">
-            <div id="drawDeckArea" class="w-20 h-28 sm:w-24 sm:h-36 rounded-xl bg-gradient-to-br from-blue-900 via-indigo-950 to-blue-950 border-2 border-indigo-400/50 card-shadow flex flex-col items-center justify-center cursor-pointer hover:border-amber-400 active:scale-95 transition-all relative group">
+            <div id="drawDeckArea" class="w-16 h-24 sm:w-24 sm:h-36 rounded-xl bg-gradient-to-br from-blue-900 via-indigo-950 to-blue-950 border-2 border-indigo-400/50 card-shadow flex flex-col items-center justify-center cursor-pointer hover:border-amber-400 active:scale-95 transition-all relative group">
               <div class="absolute inset-1 rounded-lg border border-dashed border-indigo-300/40 flex items-center justify-center">
-                <i class="fa-solid fa-layer-group text-2xl text-indigo-300/70 group-hover:text-amber-300 transition"></i>
+                <i class="fa-solid fa-layer-group text-xl sm:text-2xl text-indigo-300/70 group-hover:text-amber-300 transition"></i>
               </div>
-              <span id="deckCountBadge" class="absolute -top-2 -right-2 bg-amber-500 text-black text-[11px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow">
+              <span id="deckCountBadge" class="absolute -top-1.5 -right-1.5 bg-amber-500 text-black text-[10px] sm:text-[11px] font-black w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shadow">
                 40
               </span>
             </div>
-            <span class="text-[11px] text-gray-300 font-bold mt-1">山札を引く</span>
+            <span class="text-[10px] sm:text-[11px] text-gray-300 font-bold mt-1">山札</span>
           </div>
 
           <!-- 捨て札の場 -->
           <div class="flex flex-col items-center">
-            <div id="discardArea" class="w-20 h-28 sm:w-24 sm:h-36 rounded-xl border-2 border-white/20 card-shadow flex items-center justify-center relative bg-emerald-950/60">
+            <div id="discardArea" class="w-16 h-24 sm:w-24 sm:h-36 rounded-xl border-2 border-white/20 card-shadow flex items-center justify-center relative bg-emerald-950/60">
               <span class="text-xs text-emerald-300/60 font-medium">場</span>
             </div>
-            <span class="text-[11px] text-gray-300 font-bold mt-1">場札</span>
+            <span class="text-[10px] sm:text-[11px] text-gray-300 font-bold mt-1">場札</span>
           </div>
         </div>
 
-        <div id="gameLogToast" class="mt-2 text-center text-xs px-3 py-1 bg-black/70 rounded-full text-emerald-200 border border-emerald-600/40 max-w-xs sm:max-w-md truncate">
+        <div id="gameLogToast" class="mt-1.5 text-center text-[11px] sm:text-xs px-2.5 py-0.5 sm:py-1 bg-black/70 rounded-full text-emerald-200 border border-emerald-600/40 max-w-[200px] sm:max-w-md truncate">
           ゲームが始まりました
         </div>
       </div>
 
       <!-- RIGHT 席 -->
-      <div class="flex flex-col items-center z-10 w-24 sm:w-36">
-        <div id="seat-right" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-emerald-700/50 text-xs transition duration-300">
-          <div id="avatar-right" class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center font-bold text-[11px] text-white">D</div>
+      <div class="flex flex-col items-center z-10 w-20 sm:w-36 seat-side">
+        <div id="seat-right" class="flex items-center gap-1 px-2 sm:px-3 py-1 rounded-full bg-black/60 border border-emerald-700/50 text-[11px] sm:text-xs transition duration-300">
+          <div id="avatar-right" class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-purple-600 flex items-center justify-center font-bold text-[10px] sm:text-[11px] text-white">D</div>
           <div class="flex flex-col leading-tight">
-            <div class="flex items-center gap-1">
-              <span id="name-right" class="font-bold">Dさん</span>
-              <span id="badge-human-right" class="hidden text-[9px] bg-blue-600 px-1 rounded font-bold">人</span>
+            <div class="flex items-center gap-0.5">
+              <span id="name-right" class="font-bold truncate max-w-[45px] sm:max-w-none">Dさん</span>
+              <span id="badge-human-right" class="hidden text-[8px] bg-blue-600 px-1 rounded font-bold">人</span>
             </div>
-            <span class="text-amber-300 text-[10px] font-bold"><span id="handCount-right">4</span>枚</span>
+            <span class="text-amber-300 text-[9px] sm:text-[10px] font-bold"><span id="handCount-right">4</span>枚</span>
           </div>
         </div>
-        <span id="badge-revealed-right" class="hidden text-[10px] bg-rose-600 text-white px-1.5 py-0.2 rounded font-bold mt-1">全公開中</span>
-        <div id="hand-right" class="flex flex-col -space-y-10 mt-2 transition-all min-h-[60px]"></div>
+        <span id="badge-revealed-right" class="hidden text-[9px] bg-rose-600 text-white px-1 py-0.2 rounded font-bold mt-0.5">全公開中</span>
+        <div id="hand-right" class="flex flex-col -space-y-12 sm:-space-y-10 mt-1 transition-all min-h-[50px] scale-90 sm:scale-100"></div>
       </div>
     </div>
 
     <!-- BOTTOM 席 (自分) -->
-    <div class="w-full flex flex-col items-center z-10 max-w-4xl px-2">
-      <div class="w-full flex items-center justify-between mb-1.5 px-2 flex-wrap gap-2">
-        <div class="flex items-center gap-2 flex-wrap">
-          <div id="seat-bottom" class="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/70 border border-amber-500/70 text-xs">
-            <div id="avatar-bottom" class="w-6 h-6 rounded-full bg-amber-500 text-black flex items-center justify-center font-black text-xs">A</div>
+    <div class="w-full flex flex-col items-center z-10 max-w-4xl px-1 sm:px-2">
+      <div class="w-full flex items-center justify-between mb-1 px-1 sm:px-2 flex-wrap gap-1">
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <div id="seat-bottom" class="flex items-center gap-1.5 px-2.5 py-0.5 sm:py-1 rounded-full bg-amber-950/70 border border-amber-500/70 text-[11px] sm:text-xs">
+            <div id="avatar-bottom" class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-amber-500 text-black flex items-center justify-center font-black text-[10px] sm:text-xs">A</div>
             <span id="name-bottom" class="font-bold text-amber-200">あなた</span>
-            <span id="badge-revealed-bottom" class="hidden text-[10px] bg-rose-600 text-white px-1.5 py-0.2 rounded font-bold">全公開中</span>
+            <span id="badge-revealed-bottom" class="hidden text-[9px] bg-rose-600 text-white px-1 py-0.2 rounded font-bold">全公開中</span>
           </div>
 
-          <div class="text-[11px] bg-black/60 px-2.5 py-1 rounded-lg border border-gray-700 text-gray-300 flex items-center gap-1.5">
+          <div class="text-[10px] sm:text-[11px] bg-black/60 px-2 py-0.5 sm:py-1 rounded-lg border border-gray-700 text-gray-300 flex items-center gap-1">
             <i class="fa-solid fa-calculator text-amber-400"></i>
-            <span>現在手札合計:</span>
-            <span id="playerTotalSum" class="font-black text-amber-300 text-sm">0</span>
-            <span class="hidden sm:inline text-[10px] text-gray-400">(A=1, 2〜10, J=11, Q=12, K=13)</span>
+            <span>合計:</span>
+            <span id="playerTotalSum" class="font-black text-amber-300 text-xs sm:text-sm">0</span>
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <button id="btnRon" class="hidden bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-black text-xs sm:text-sm px-3.5 py-1.5 rounded-lg border-2 border-yellow-300 shadow-lg shadow-rose-900/50 animate-bounce transition flex items-center gap-1">
-            <i class="fa-solid fa-fire text-yellow-300"></i> ロン上がり宣言！
+        <div class="flex items-center gap-1.5">
+          <button id="btnRon" class="hidden bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-black text-xs px-3 py-1 sm:py-1.5 rounded-lg border-2 border-yellow-300 shadow-lg shadow-rose-900/50 animate-bounce transition flex items-center gap-1">
+            <i class="fa-solid fa-fire text-yellow-300"></i> ロン！
           </button>
 
-          <button id="btnTsumo" class="hidden bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-black text-xs sm:text-sm px-3.5 py-1.5 rounded-lg border-2 border-white shadow-lg shadow-amber-900/50 animate-bounce transition flex items-center gap-1">
-            <i class="fa-solid fa-crown text-black"></i> ツモ上がり！
+          <button id="btnTsumo" class="hidden bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-black text-xs px-3 py-1 sm:py-1.5 rounded-lg border-2 border-white shadow-lg shadow-amber-900/50 animate-bounce transition flex items-center gap-1">
+            <i class="fa-solid fa-crown text-black"></i> ツモ！
           </button>
 
-          <button id="btnPass" class="hidden bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black text-xs sm:text-sm px-3.5 py-1.5 rounded-lg border border-amber-300 shadow-lg transition flex items-center gap-1 animate-pulse">
-            <i class="fa-solid fa-forward-step"></i> パスして終了
+          <button id="btnPass" class="hidden bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black text-xs px-3 py-1 sm:py-1.5 rounded-lg border border-amber-300 shadow-lg transition flex items-center gap-1 animate-pulse">
+            <i class="fa-solid fa-forward-step"></i> パス
           </button>
 
-          <button id="btnPlaySelected" class="hidden bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-xs sm:text-sm font-black px-4 py-1.5 rounded-lg border border-emerald-300 shadow-md transition flex items-center gap-1">
-            <i class="fa-solid fa-play"></i> 出す (<span id="selectedCardCount">0</span>枚)
+          <button id="btnPlaySelected" class="hidden bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-xs font-black px-3.5 py-1 sm:py-1.5 rounded-lg border border-emerald-300 shadow-md transition flex items-center gap-1">
+            <i class="fa-solid fa-play"></i> 出す (<span id="selectedCardCount">0</span>)
           </button>
         </div>
       </div>
 
-      <div id="hand-bottom" class="w-full flex justify-center items-end -space-x-5 sm:-space-x-8 pb-1 pt-3 overflow-x-auto no-scrollbar min-h-[130px]"></div>
+      <div id="hand-bottom" class="w-full flex justify-center items-end -space-x-7 sm:-space-x-8 pb-1 pt-2 overflow-x-auto no-scrollbar min-h-[110px] sm:min-h-[130px] px-2"></div>
     </div>
   </main>
 
