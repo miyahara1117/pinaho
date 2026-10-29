@@ -147,7 +147,7 @@
     </div>
 
     <div class="text-[10px] text-gray-400 text-center z-10 pb-1">
-      手札合計ロン / ツモ上がり / スキップ・リバース・ドロー2・強制オープン
+      手札合計ロン / ツモ上がり / スキップ・リバース・ドロー2・強制オープン / ロン返し
     </div>
   </div>
 
@@ -560,6 +560,7 @@
             <li><strong class="text-yellow-200">9 (リバース)</strong>: プレイの回り順が逆転。</li>
             <li><strong class="text-yellow-200">K (強制手札オープン)</strong>: 次の人は手札を全員に完全公開。ただしKを出せば回避（さらに次の人へ移送）。公開後に新しく引いたカードは裏向きのまま非公開です。</li>
             <li><strong class="text-yellow-200">Joker (最強ワイルド)</strong>: いつでも場に出せます。ドロー2＋色指定効果を持ちます。</li>
+            <li><strong class="text-rose-400">🔥 ロン返し (カウンター)</strong>: 他のプレイヤーからロン宣言をされた際、自分の手札合計も場札（またはロン札）の数字と一致していれば「ロン返し」を割り込み宣言して逆転アガリが可能です！</li>
           </ul>
         </div>
       </div>
@@ -625,7 +626,7 @@
     ];
 
     const PLAYERS = [
-      { id: 'A', name: 'あなた (Aさん)', isAI: false, colorBg: 'bg-amber-600', peerId: null },
+      { id: 'A', name: 'マスター', isAI: false, colorBg: 'bg-amber-600', peerId: null },
       { id: 'B', name: 'Bさん', isAI: true, colorBg: 'bg-blue-600', peerId: null },
       { id: 'C', name: 'Cさん', isAI: true, colorBg: 'bg-emerald-600', peerId: null },
       { id: 'D', name: 'Dさん', isAI: true, colorBg: 'bg-purple-600', peerId: null }
@@ -896,7 +897,7 @@
       return 'bottom';
     }
 
-// --- 4. 確実につながるPeerJS通信処理（Google STUN適用） ---
+    // --- 4. 確実につながるPeerJS通信処理（Google STUN適用） ---
     function initHostPeer(myName) {
       if (netState.peer) netState.peer.destroy();
       netState.isOnline = true;
@@ -1251,7 +1252,7 @@
       netState.connections = {};
       netState.hostConn = null;
 
-      PLAYERS[0].name = 'あなた (Aさん)';
+      PLAYERS[0].name = 'マスター';
       PLAYERS[0].isAI = false;
       PLAYERS[1].name = 'Bさん';
       PLAYERS[1].isAI = true;
@@ -1628,7 +1629,15 @@
         const promptDesc = document.getElementById('ronPromptDesc');
         const myHand = state.players[mySlotId].hand;
         const sums = calculateHandSums(myHand).join(' または ');
-        promptDesc.innerHTML = `${discarder.name} が <strong>[${discardCard.symbol} ${getRankName(discardCard.rank)}]</strong> を出しました！<br>あなたの手札合計（<strong>${sums}</strong>）と一致しています！`;
+
+        // 複数人候補がいる、または自分以外が先にロンしていた場合は「ロン返し」表示に昇格
+        const isCounterRon = candidates.length > 1 || discarder.id !== getCurrentPlayer().id;
+        const ronTitle = isCounterRon ? '🔥 ロン返しのチャンス！' : 'ロン上がりのチャンス！';
+
+        const promptTitleEl = promptModal.querySelector('h3');
+        if (promptTitleEl) promptTitleEl.textContent = ronTitle;
+
+        promptDesc.innerHTML = `${discarder.name} が <strong>[${discardCard.symbol} ${getRankName(discardCard.rank)}]</strong> を出しました！<br>あなたの手札合計（<strong>${sums}</strong>）と一致しています！${isCounterRon ? '<br><span class="text-amber-300 font-bold">※「ロン返し」で逆転勝利できます！</span>' : ''}`;
         promptModal.classList.remove('hidden');
 
         document.getElementById('btnAcceptRon').onclick = () => {
@@ -1636,7 +1645,7 @@
           if (netState.isOnline && !netState.isHost) {
             sendActionToHost('ron_declare');
           } else {
-            resolveRonWin(candidates, discarder, mySlotId);
+            resolveRonWin(candidates, discarder, mySlotId, isCounterRon);
           }
         };
 
@@ -1644,7 +1653,7 @@
           promptModal.classList.add('hidden');
           const otherCandidates = candidates.filter(p => p.id !== mySlotId);
           if (otherCandidates.length > 0) {
-            resolveRonWin(otherCandidates, discarder, otherCandidates[otherCandidates.length - 1].id);
+            resolveRonWin(otherCandidates, discarder, otherCandidates[otherCandidates.length - 1].id, isCounterRon);
           } else {
             onContinue();
           }
@@ -1652,40 +1661,44 @@
       } else {
         setTimeout(() => {
           const winner = candidates[candidates.length - 1];
-          resolveRonWin(candidates, discarder, winner.id);
+          const isCounterRon = candidates.length > 1;
+          resolveRonWin(candidates, discarder, winner.id, isCounterRon);
         }, 1200);
       }
     }
 
-    function resolveRonWin(candidates, discarder, selectedWinnerId) {
+    function resolveRonWin(candidates, discarder, selectedWinnerId, isCounterRon = false) {
       playSound('ron');
       let winner = PLAYERS.find(p => p.id === selectedWinnerId);
       const winningCard = getTopDiscard();
 
+      const winTitle = isCounterRon ? `🔥 ${winner.name} のロン返し！！` : `${winner.name} のロン上がり！`;
       let extraNote = '';
-      if (candidates.length > 1) {
+      if (isCounterRon) {
+        extraNote = `\n※「ロン返し」が発動！相手のロン宣言を打ち消して見事逆転アガリを達成しました！`;
+      } else if (candidates.length > 1) {
         extraNote = `\n※複数人がロン可能でしたが、ルールにより後からロンを宣言した ${winner.name} の勝ちとなります！`;
       }
 
       broadcastGameState('win_cut_in', {
-        title: `${winner.name} のロン上がり！`,
-        subtitle: `${discarder.name} が出したカードで上がり成立！`,
+        title: winTitle,
+        subtitle: isCounterRon ? `【ロン返し成功】見事カウンター上がり成立！` : `${discarder.name} が出したカードで上がり成立！`,
         keyCard: winningCard,
-        roleLabel: '振り込み札'
+        roleLabel: isCounterRon ? 'カウンター札' : '振り込み札'
       });
 
       showWinCutIn(
-        `${winner.name} のロン上がり！`,
-        `${discarder.name} が出したカードで上がり成立！`,
+        winTitle,
+        isCounterRon ? `【ロン返し成功】見事カウンター上がり成立！` : `${discarder.name} が出したカードで上がり成立！`,
         winningCard,
-        '振り込み札',
+        isCounterRon ? 'カウンター札' : '振り込み札',
         () => {
           endGame(
             winner,
-            'ロン上がり！',
-            `${winner.name}がロン宣言！\n${discarder.name}の振り込みです！${extraNote}`,
+            isCounterRon ? '🔥 ロン返し達成！' : 'ロン上がり！',
+            `${winner.name}が${isCounterRon ? 'ロン返し' : 'ロン'}を宣言！\n${discarder.name}からの上がりです！${extraNote}`,
             winningCard,
-            `${discarder.name} が場に出したカード（振り込み）`
+            `${discarder.name} が場に出したカード`
           );
         }
       );
